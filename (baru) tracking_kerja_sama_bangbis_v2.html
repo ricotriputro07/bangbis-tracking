@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracking Kerja Sama — Divisi Bangbis</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --forest: #1a3a2a; --leaf: #2d6a4f; --sage: #52b788; --mint: #b7e4c7;
+    --paper: #f8faf9; --ink: #1c2b22; --muted: #6b8f71; --border: #d8ead0;
+    --amber: #e9c46a; --amber-dark: #c9a227; --red: #e63946; --red-light: #fde8ea;
+    --green-light: #e8f5e9; --blue: #457b9d; --blue-light: #e8f1f8;
+    --gray: #8d9e8f; --gray-light: #f0f4f0; --purple: #7b5ea7; --purple-light: #f0ebf8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--paper); color: var(--ink); font-size: 13px; line-height: 1.5; }
+
+  /* HEADER */
+  .header { background: var(--forest); color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--sage); }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-mark { width: 40px; height: 40px; background: var(--sage); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .header h1 { font-size: 16px; font-weight: 700; }
+  .header .sub { font-size: 11px; color: var(--mint); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-meta { font-size: 11px; color: var(--mint); text-align: right; }
+  .header-meta strong { color: white; font-size: 20px; font-weight: 700; display: block; }
+  .btn-add-mitra { background: var(--sage); color: var(--forest); border: none; padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+  .btn-add-mitra:hover { background: var(--mint); }
+
+  /* YEAR SELECTOR */
+  .year-bar { background: var(--leaf); padding: 6px 24px; display: flex; align-items: center; gap: 10px; }
+  .year-label { color: var(--mint); font-size: 11px; font-weight: 600; }
+  .year-btn { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 3px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .year-btn.active { background: white; color: var(--forest); }
+  .year-btn:hover:not(.active) { background: rgba(255,255,255,0.15); }
+
+  /* STATS BAR */
+  .stats-bar { background: white; border-bottom: 1px solid var(--border); display: flex; overflow-x: auto; }
+  .stat { padding: 10px 20px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border); min-width: 110px; cursor: pointer; transition: background 0.15s; }
+  .stat:hover { background: var(--gray-light); }
+  .stat.active { background: var(--green-light); border-bottom: 2px solid var(--leaf); }
+  .stat-val { font-size: 20px; font-weight: 700; color: var(--forest); }
+  .stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; }
+  .stat-val.amber { color: var(--amber-dark); }
+  .stat-val.green { color: var(--leaf); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.purple { color: var(--purple); }
+
+  /* TOOLBAR */
+  .toolbar { background: white; padding: 8px 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+  .search-box { display: flex; align-items: center; gap: 6px; background: var(--gray-light); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; flex: 1; min-width: 180px; }
+  .search-box input { border: none; background: none; outline: none; font-size: 12px; font-family: 'Inter', sans-serif; width: 100%; }
+  .filter-select { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: white; font-size: 11px; font-family: 'Inter', sans-serif; cursor: pointer; color: var(--ink); outline: none; }
+  .view-toggle { display: flex; gap: 2px; margin-left: auto; }
+  .view-btn { padding: 5px 10px; border-radius: 4px; cursor: pointer; border: 1px solid var(--border); background: white; font-size: 11px; font-weight: 600; color: var(--muted); }
+  .view-btn.active { background: var(--leaf); color: white; border-color: var(--leaf); }
+
+  /* MAIN */
+  .main { display: flex; height: calc(100vh - 175px); overflow: hidden; }
+
+  /* LIST PANEL */
+  .list-panel { width: 400px; min-width: 300px; border-right: 1px solid var(--border); overflow-y: auto; background: white; }
+  .category-header { padding: 7px 14px; background: var(--forest); color: white; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; }
+  .cat-count { background: rgba(255,255,255,0.2); padding: 1px 7px; border-radius: 10px; font-size: 10px; }
+  .item-card { padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; position: relative; }
+  .item-card:hover { background: var(--gray-light); }
+  .item-card.active { background: var(--green-light); border-left: 3px solid var(--leaf); }
+  .item-card.hidden { display: none; }
+  .item-name { font-weight: 600; font-size: 12px; color: var(--ink); line-height: 1.3; margin-bottom: 4px; }
+  .item-meta { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  .badge { padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .badge-status-InProgress { background: var(--blue-light); color: var(--blue); }
+  .badge-status-Selesai { background: var(--green-light); color: var(--leaf); }
+  .badge-status-TidakBerlanjut { background: var(--red-light); color: var(--red); }
+  .badge-pic { background: var(--forest); color: white; font-family: 'JetBrains Mono', monospace; }
+  .badge-jenis { background: #fff3e0; color: #e65100; }
+  .badge-objek { background: var(--mint); color: var(--forest); }
+  .step-mini { display: flex; gap: 2px; margin-top: 5px; }
+  .step-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--border); }
+  .step-dot.done { background: var(--sage); }
+  .step-dot.current { background: var(--amber); }
+  .item-tl { font-size: 10px; color: var(--muted); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+  /* DETAIL PANEL */
+  .detail-panel { flex: 1; overflow-y: auto; background: var(--paper); }
+  .detail-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--muted); gap: 10px; }
+  .detail-empty-icon { font-size: 48px; }
+  .detail-header { background: white; padding: 16px 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+  .detail-header-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .detail-title { font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.3; }
+  .detail-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .detail-actions { display: flex; gap: 6px; margin-top: 8px; }
+  .btn-edit { background: var(--forest); color: white; border: none; padding: 5px 12px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+  .btn-edit:hover { background: var(--leaf); }
+  .btn-add-report { background: var(--amber); color: var(--forest); border: none; padding: 5px 12px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+  .btn-add-report:hover { background: var(--amber-dark); color: white; }
+  .detail-content { padding: 16px 20px; }
+
+  /* STEPS TRACKER */
+  .steps-track { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-bottom: 14px; }
+  .steps-track-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 10px; }
+  .steps-flow { display: flex; gap: 0; overflow-x: auto; }
+  .step-item { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 64px; position: relative; cursor: pointer; }
+  .step-item:not(:last-child)::after { content: ''; position: absolute; top: 13px; left: 50%; width: 100%; height: 2px; background: var(--border); z-index: 0; }
+  .step-item.done:not(:last-child)::after { background: var(--sage); }
+  .step-circle { width: 26px; height: 26px; border-radius: 50%; background: var(--border); color: var(--muted); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; z-index: 1; border: 2px solid white; box-shadow: 0 0 0 2px var(--border); }
+  .step-item.done .step-circle { background: var(--sage); color: white; box-shadow: 0 0 0 2px var(--sage); }
+  .step-item.current .step-circle { background: var(--amber); color: var(--forest); box-shadow: 0 0 0 2px var(--amber); }
+  .step-item:hover .step-circle { opacity: 0.8; }
+  .step-label { font-size: 8.5px; text-align: center; color: var(--muted); margin-top: 4px; line-height: 1.2; }
+  .step-item.done .step-label { color: var(--leaf); font-weight: 600; }
+  .step-item.current .step-label { color: var(--amber-dark); font-weight: 700; }
+  .step-upload-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); margin-top: 2px; font-size: 7px; display: flex; align-items: center; justify-content: center; }
+  .step-pct { margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+  .pct-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .pct-fill { height: 100%; background: var(--sage); border-radius: 3px; }
+  .pct-fill.amber { background: var(--amber); }
+  .pct-num { font-size: 11px; font-weight: 700; color: var(--leaf); min-width: 32px; }
+
+  /* MONTHLY PROGRESS */
+  .monthly-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .monthly-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); }
+  .monthly-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .month-card { background: white; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .month-card.full { grid-column: 1 / -1; }
+  .month-header { padding: 7px 12px; background: var(--forest); color: white; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+  .month-header.empty { background: var(--gray); }
+  .month-body { padding: 10px 12px; }
+  .month-section { margin-bottom: 8px; }
+  .month-section:last-child { margin-bottom: 0; }
+  .month-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); font-weight: 700; margin-bottom: 3px; }
+  .month-text { font-size: 11px; color: var(--ink); line-height: 1.55; white-space: pre-wrap; }
+  .month-text.tl { background: #fffbf0; border-left: 3px solid var(--amber); padding: 5px 8px; border-radius: 0 4px 4px 0; }
+  .month-empty { color: var(--gray); font-size: 11px; font-style: italic; }
+
+  /* DOCUMENT UPLOAD */
+  .doc-section { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+  .doc-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .doc-step-group { margin-bottom: 10px; }
+  .doc-step-name { font-size: 11px; font-weight: 600; color: var(--forest); margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; }
+  .doc-list { display: flex; flex-direction: column; gap: 4px; }
+  .doc-item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: var(--gray-light); border-radius: 5px; font-size: 11px; }
+  .doc-item-icon { font-size: 14px; }
+  .doc-item-name { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .doc-item-date { font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .doc-item-del { background: none; border: none; cursor: pointer; color: var(--red); font-size: 14px; padding: 0 2px; }
+  .btn-upload-doc { background: var(--blue-light); color: var(--blue); border: 1px dashed var(--blue); border-radius: 5px; padding: 4px 10px; font-size: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+  .btn-upload-doc:hover { background: var(--blue); color: white; }
+  .no-docs { font-size: 10px; color: var(--muted); font-style: italic; }
+
+  /* META GRID */
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: white; border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-bottom: 14px; }
+  .meta-item { display: flex; flex-direction: column; gap: 3px; }
+  .meta-key { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 700; }
+  .meta-val { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .meta-val.code { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--blue); }
+  .meta-val.empty { color: var(--gray); font-style: italic; font-weight: 400; }
+
+  /* TABLE VIEW */
+  .table-view { display: none; padding: 14px; overflow-x: auto; }
+  .table-view.active { display: block; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+  thead tr { background: var(--forest); color: white; }
+  th { padding: 9px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; text-align: left; white-space: nowrap; }
+  td { padding: 8px 12px; font-size: 11px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:hover td { background: var(--gray-light); }
+  .td-mitra { font-weight: 600; max-width: 200px; }
+  .td-progres { max-width: 260px; font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+  .prog-bar-sm { width: 70px; height: 4px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+  .prog-fill-sm { height: 100%; background: var(--sage); }
+  .cat-divider td { background: var(--forest); color: white; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; padding: 5px 12px; }
+
+  /* DASHBOARD VIEW */
+  .dashboard-view { display: none; padding: 16px; overflow-y: auto; height: calc(100vh - 175px); }
+  .dashboard-view.active { display: block; }
+  .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .dash-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .dash-card.full { grid-column: 1 / -1; }
+  .dash-card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 12px; }
+  .chart-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .chart-bar-label { font-size: 11px; min-width: 140px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chart-bar-track { flex: 1; height: 18px; background: var(--gray-light); border-radius: 4px; overflow: hidden; }
+  .chart-bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 6px; font-size: 10px; font-weight: 700; color: white; }
+  .chart-bar-count { font-size: 11px; font-weight: 700; min-width: 22px; text-align: right; }
+  .donut-wrap { display: flex; gap: 16px; align-items: center; }
+  .donut-svg { flex-shrink: 0; }
+  .donut-legend { display: flex; flex-direction: column; gap: 6px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .pic-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .pic-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--forest); color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+  .pic-info { flex: 1; }
+  .pic-name { font-size: 11px; font-weight: 600; }
+  .pic-bar-track { height: 6px; background: var(--gray-light); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+  .pic-bar-fill { height: 100%; background: var(--sage); border-radius: 3px; }
+  .pic-count { font-size: 11px; font-weight: 700; color: var(--leaf); }
+  .dash-kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .kpi-item { text-align: center; padding: 12px; background: var(--gray-light); border-radius: 8px; }
+  .kpi-val { font-size: 24px; font-weight: 700; }
+  .kpi-lbl { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .step-dist-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; font-size: 11px; }
+  .step-dist-name { min-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .step-dist-bar { flex: 1; height: 12px; background: var(--gray-light); border-radius: 3px; overflow: hidden; }
+  .step-dist-fill { height: 100%; background: var(--blue); border-radius: 3px; }
+  .step-dist-count { min-width: 20px; text-align: right; font-weight: 700; color: var(--blue); }
+
+  /* MODALS */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 999; display: flex; align-items: center; justify-content: center; }
+  .modal-overlay.hidden { display: none; }
+  .modal { background: white; border-radius: 12px; width: 620px; max-width: 96vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.25); }
+  .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: white; z-index: 1; }
+  .modal-title { font-size: 15px; font-weight: 700; color: var(--forest); }
+  .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); line-height: 1; }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; position: sticky; bottom: 0; background: white; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .form-input, .form-select, .form-textarea { border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 12px; font-family: 'Inter', sans-serif; color: var(--ink); outline: none; transition: border-color 0.15s; background: white; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--sage); box-shadow: 0 0 0 2px rgba(82,183,136,0.15); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .section-divider { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--forest); padding: 8px 0 4px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .steps-check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .step-check-item { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 5px; font-size: 11px; cursor: pointer; }
+  .step-check-item:hover { background: var(--gray-light); }
+  .step-check-item input { accent-color: var(--sage); }
+  .btn-primary { background: var(--forest); color: white; border: none; padding: 8px 18px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .btn-primary:hover { background: var(--leaf); }
+  .btn-secondary { background: white; color: var(--muted); border: 1px solid var(--border); padding: 8px 18px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .btn-secondary:hover { background: var(--gray-light); }
+  .btn-danger { background: var(--red-light); color: var(--red); border: 1px solid var(--red); padding: 8px 18px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .btn-danger:hover { background: var(--red); color: white; }
+  .month-report-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+  .month-tab { padding: 4px 10px; border: 1px solid var(--border); border-radius: 5px; font-size: 11px; cursor: pointer; background: white; }
+  .month-tab.active { background: var(--forest); color: white; border-color: var(--forest); }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--forest); color: white; padding: 10px 18px; border-radius: 8px; font-size: 12px; font-weight: 600; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.2); animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-mark">🌳</div>
+    <div>
+      <h1>Tracking Kerja Sama — Bangbis</h1>
+      <div class="sub">Divisi Pengembangan Bisnis · Perum Perhutani</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn-add-mitra" onclick="openAddMitra()">＋ Tambah Mitra</button>
+    <div class="header-meta">
+      <strong id="total-count">0</strong>
+      total mitra
+    </div>
+  </div>
+</div>
+
+<!-- YEAR BAR -->
+<div class="year-bar">
+  <span class="year-label">📅 Tahun:</span>
+  <div id="year-btns"></div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat" onclick="filterStatus('all')" id="stat-all">
+    <span class="stat-val" id="cnt-all">0</span>
+    <span class="stat-lbl">Semua</span>
+  </div>
+  <div class="stat" onclick="filterStatus('In Progress')" id="stat-inprogress">
+    <span class="stat-val amber" id="cnt-inprogress">0</span>
+    <span class="stat-lbl">🔄 In Progress</span>
+  </div>
+  <div class="stat" onclick="filterStatus('Selesai')" id="stat-selesai">
+    <span class="stat-val green" id="cnt-selesai">0</span>
+    <span class="stat-lbl">✅ Selesai/PKS TTD</span>
+  </div>
+  <div class="stat" onclick="filterStatus('Tidak Berlanjut')" id="stat-batal">
+    <span class="stat-val red" id="cnt-batal">0</span>
+    <span class="stat-lbl">🚫 Tidak Berlanjut</span>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="search-box">
+    <span>🔍</span>
+    <input type="text" id="search" placeholder="Cari nama mitra, pemroses, PIC…" oninput="applyFilters()">
+  </div>
+  <select class="filter-select" id="filter-cat" onchange="applyFilters()">
+    <option value="">Semua Kategori</option>
+    <option>Jasa Lingkungan (Wisata)</option>
+    <option>Kawasan Tanaman Lainnya</option>
+    <option>MOU/NDA/LOI Telah Ditandatangani</option>
+    <option>PKS Telah Ditandatangani</option>
+    <option>Tidak Berlanjut/Batal/Berakhir</option>
+  </select>
+  <select class="filter-select" id="filter-pic" onchange="applyFilters()">
+    <option value="">Semua PIC</option>
+    <option>MM</option><option>ABM</option><option>DR</option><option>IV</option><option>VA</option>
+  </select>
+  <div class="view-toggle">
+    <button class="view-btn active" id="btn-list" onclick="setView('list')">☰ List</button>
+    <button class="view-btn" id="btn-table" onclick="setView('table')">⊞ Tabel</button>
+    <button class="view-btn" id="btn-dashboard" onclick="setView('dashboard')">📊 Dashboard</button>
+  </div>
+</div>
+
+<!-- LIST VIEW -->
+<div class="main" id="list-view">
+  <div class="list-panel" id="list-panel"></div>
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-empty">
+      <div class="detail-empty-icon">🌿</div>
+      <div style="font-weight:600">Pilih mitra untuk melihat detail</div>
+      <div style="font-size:11px">Klik item di kiri untuk menampilkan progress lengkap</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE VIEW -->
+<div class="table-view" id="table-view">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Nama Mitra</th><th>Kategori</th><th>Jenis KS</th>
+        <th>Pemroses</th><th>PIC</th><th>Status</th><th>Tahap</th>
+        <th>Progress</th><th>Tindak Lanjut Terakhir</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+</div>
+
+<!-- DASHBOARD VIEW -->
+<div class="dashboard-view" id="dashboard-view">
+  <div class="dash-grid">
+    <div class="dash-card">
+      <div class="dash-card-title">📊 Ringkasan Status</div>
+      <div class="donut-wrap" id="dash-donut-wrap"></div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-title">👤 Beban PIC</div>
+      <div id="dash-pic-bars"></div>
+    </div>
+    <div class="dash-card full">
+      <div class="dash-card-title">📂 Kerja Sama per Kategori</div>
+      <div id="dash-cat-bars"></div>
+    </div>
+    <div class="dash-card full">
+      <div class="dash-card-title">🔢 Distribusi Tahapan (In Progress)</div>
+      <div id="dash-step-dist"></div>
+    </div>
+    <div class="dash-card full">
+      <div class="dash-card-title">📈 KPI Ringkas</div>
+      <div class="dash-kpi" id="dash-kpi"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: TAMBAH/EDIT MITRA ===== -->
+<div class="modal-overlay hidden" id="modal-mitra">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-mitra-title">Tambah Mitra Baru</div>
+      <button class="modal-close" onclick="closeModal('modal-mitra')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-idx" value="">
+      <div class="section-divider">Identitas Mitra</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nama Mitra *</label>
+          <input type="text" class="form-input" id="f-mitra" placeholder="Nama perusahaan / lembaga">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Objek KS</label>
+          <input type="text" class="form-input" id="f-objek" placeholder="cth: Tebu, Wisata, dll">
+        </div>
+      </div>
+      <div class="form-row triple">
+        <div class="form-group">
+          <label class="form-label">Pemroses</label>
+          <input type="text" class="form-input" id="f-pemroses" placeholder="Divre / Kanpus / KPH">
+        </div>
+        <div class="form-group">
+          <label class="form-label">PIC</label>
+          <select class="form-select" id="f-pic">
+            <option value="">— pilih —</option>
+            <option>MM</option><option>ABM</option><option>DR</option><option>IV</option><option>VA</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tahun</label>
+          <select class="form-select" id="f-tahun" onchange="updateMonthOptions()"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Jenis Kerja Sama</label>
+          <select class="form-select" id="f-jenis">
+            <option value="">— pilih —</option>
+            <option>PKS Baru</option><option>Perpanjangan PKS</option><option>MoU Baru</option>
+            <option>NDA Baru</option><option>Survey Lokasi</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <select class="form-select" id="f-kategori">
+            <option value="">— pilih —</option>
+            <option>Jasa Lingkungan (Wisata)</option>
+            <option>Kawasan Tanaman Lainnya</option>
+            <option>MOU/NDA/LOI Telah Ditandatangani</option>
+            <option>PKS Telah Ditandatangani</option>
+            <option>Tidak Berlanjut/Batal/Berakhir</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="f-status">
+            <option value="In Progress">In Progress</option>
+            <option value="Selesai">Selesai</option>
+            <option value="Tidak Berlanjut">Tidak Berlanjut</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tahap Saat Ini</label>
+          <select class="form-select" id="f-current-step"></select>
+        </div>
+      </div>
+      <div class="section-divider">Nomor Dokumen</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">No SKK Dirut</label>
+          <input type="text" class="form-input" id="f-no-skk" placeholder="Nomor SKK">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nomor PKS / MoU</label>
+          <input type="text" class="form-input" id="f-no-pks" placeholder="Nomor perjanjian">
+        </div>
+      </div>
+      <div class="section-divider">Tahapan yang Sudah Selesai</div>
+      <div class="steps-check-grid" id="steps-check-grid"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="btn-delete-mitra" onclick="deleteMitra()" style="display:none;margin-right:auto">🗑 Hapus</button>
+      <button class="btn-secondary" onclick="closeModal('modal-mitra')">Batal</button>
+      <button class="btn-primary" onclick="saveMitra()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: TAMBAH/EDIT LAPORAN BULANAN ===== -->
+<div class="modal-overlay hidden" id="modal-report">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📋 Laporan Bulanan</div>
+      <button class="modal-close" onclick="closeModal('modal-report')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="report-idx" value="">
+      <div style="font-size:13px;font-weight:700;color:var(--forest);margin-bottom:12px" id="report-mitra-name"></div>
+      <div style="margin-bottom:12px;">
+        <div class="form-row triple">
+          <div class="form-group">
+            <label class="form-label">Tahun</label>
+            <select class="form-select" id="report-year-sel" onchange="updateReportMonthTabs()"></select>
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label class="form-label">Pilih Bulan</label>
+            <div class="month-report-tabs" id="report-month-tabs"></div>
+          </div>
+        </div>
+      </div>
+      <div id="report-form-fields">
+        <div class="form-row single">
+          <div class="form-group">
+            <label class="form-label">📋 Progres Bulan Ini</label>
+            <textarea class="form-textarea" id="report-progres" rows="5" placeholder="Tuliskan perkembangan / progres kerja sama bulan ini…"></textarea>
+          </div>
+        </div>
+        <div class="form-row single">
+          <div class="form-group">
+            <label class="form-label">⤷ Tindak Lanjut</label>
+            <textarea class="form-textarea" id="report-tl" rows="4" placeholder="Rencana tindak lanjut…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-report')">Batal</button>
+      <button class="btn-primary" onclick="saveReport()">💾 Simpan Laporan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: UPLOAD DOKUMEN ===== -->
+<div class="modal-overlay hidden" id="modal-upload">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">📎 Upload Dokumen</div>
+      <button class="modal-close" onclick="closeModal('modal-upload')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="upload-idx" value="">
+      <input type="hidden" id="upload-step" value="">
+      <div style="font-size:12px;font-weight:700;color:var(--forest);margin-bottom:4px" id="upload-step-label"></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px" id="upload-mitra-label"></div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">Pilih File</label>
+        <input type="file" id="upload-file" class="form-input" multiple style="padding:6px">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">Keterangan (opsional)</label>
+        <input type="text" class="form-input" id="upload-desc" placeholder="cth: Draft PKS versi 2, Surat permohonan…">
+      </div>
+      <div id="upload-preview" style="display:none">
+        <div class="form-label" style="margin-bottom:6px">File yang akan diupload:</div>
+        <div id="upload-preview-list"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-upload')">Batal</button>
+      <button class="btn-primary" onclick="saveUpload()">📎 Simpan Dokumen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== DATA ====================
+let DATA = [
+  {"seq":1,"mitra":"PT Taman Safari Indonesia (TSI Prigen)","objek":"","pemroses":"Divre Jatim","jenis_ks":"Perpanjangan PKS","pic":"MM","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":["Permohonan","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Telah dilaksanakan monev oleh Divre Jatim, KPH Pasuruan dan PT TSI tanggal 4 Desember 2025.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 sesuai hasil evaluasi oleh Divre Jatim."},"feb":{"progres":"Direktur PP melalui surat Nomor 0059/041.4/PP/2026 tanggal 25 Februari 2026 menyampaikan bahwa terdapat pembangunan Enchanting Forest, maka perpanjangan diproses melalui mekanisme perpanjangan dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"mar":{"progres":"Sebagaimana BA Monev tanggal 4 Desember 2025, perpanjangan diproses melalui mekanisme perpanjangan dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"apr":{"progres":"Plt Direktur PP melalui surat Nomor 0092/041.4/PP/2026 tanggal 22 April 2026 menyampaikan bahwa perpanjangan diproses melalui mekanisme dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"mei":{"progres":"Telah dilaksanakan pertemuan antara perwakilan PT TSI dengan Deprenbangbis Divre Jatim pada tanggal 11 Mei 2026.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."}}},"docs":{}},
+  {"seq":2,"mitra":"PT Taman Wisata Soemo Suparto (WW Pantai Midodaren)","objek":"","pemroses":"KPH Kediri","jenis_ks":"Perpanjangan PKS","pic":"MM","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":["Permohonan"],"last_step":1,"current_step":"Pernyataan Minat","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Proses review Perdir 06/2024 oleh Divisi Hukum secara menyeluruh.","tl":"Divisi Hukum masih berproses mereview Perdir 06/2024."},"feb":{"progres":"Review Perdir 06/2024 oleh Divisi Hukum telah selesai.","tl":"Proses finalisasi draft revisi Perdir 06/2024."},"mar":{"progres":"Penyusunan kajian bisnis terkait perpanjangan kerja sama TWSS.","tl":"Draft final revisi Perdir 06/2024 telah disampaikan ke Plt Direktur PP."},"apr":{"progres":"Pendampingan BPKP terkait kerja sama yang menggunakan Perdir 06/2024.","tl":"Hasil pendampingan BPKP terhadap kerja sama yang menggunakan Perdir 06/2024."},"mei":{"progres":"Pendampingan BPKP lingkup Jawa Timur terkait kerja sama yang menggunakan Perdir 06/2024.","tl":"Hasil pendampingan BPKP terhadap kerja sama yang menggunakan Perdir 06/2024."}}},"docs":{}},
+  {"seq":3,"mitra":"Badan Pelaksana Otorita Borobudur (BPOB)","objek":"","pemroses":"","jenis_ks":"","pic":"","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":[],"last_step":0,"current_step":"Permohonan","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Hasil rapat tanggal 18 Desember 2025: Pelepasan Kawasan Hutan, Pembayaran PNBP, Kendala aksesibilitas kawasan BOB.","tl":"Perhutani bersiap terhadap kemungkinan lepasnya kawasan hutan 250 Ha."},"apr":{"progres":"Monitoring perkembangan revisi Perpres No.46/2017.","tl":"Koordinasi tindak lanjut dengan Kementerian Kehutanan."},"mei":{"progres":"BPOB menyampaikan laporan pendapatan tahunan atas pemanfaatan lahan kerja sama.","tl":"Perhutani menerbitkan invoice tagihan pembayaran Fixed Sharing."}}},"docs":{}},
+  {"seq":4,"mitra":"Faunaland Safari Indonesia","objek":"Wisata","pemroses":"Kanpus","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat"],"last_step":2,"current_step":"Penyusunan KAK","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"PT Faunaland sudah menyampaikan Proposal Bisnis dan Anak Perusahaan.","tl":"Monitoring jawaban atas verifikasi lahan dan progress pemenuhan dokumen lingkungan."},"mei":{"progres":"Dari mitra sudah menyampaikan, belum ada perkembangan lebih lanjut terkait permohonan.","tl":"Masuk kelola KHDPK — proses pengajuan melalui Kementerian Kehutanan."}}},"docs":{}},
+  {"seq":5,"mitra":"PT Pesona Panorama Menoreh (Wisata Menoreh)","objek":"Wisata","pemroses":"KPH Kedu Sel","jenis_ks":"PKS Baru","pic":"MM","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":["Permohonan"],"last_step":1,"current_step":"Pernyataan Minat","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"PT PPM menyampaikan permohonan MoU melalui surat Nomor 008/PPM-PHT/DK/Perm/I/2026.","tl":"Menunggu disposisi Plt Dirut sebagai dasar tindak lanjut."},"mei":{"progres":"Disposisi Dirut: Coba pertimbangkan/kaji kelayakannya. PT PPM sedang berkoordinasi dengan Kadivre Jateng.","tl":"Menunggu hasil rencana perubahan kebijakan."}}},"docs":{}},
+  {"seq":1,"mitra":"CV Anggrek Semeru","objek":"Tebu","pemroses":"Divre Jatim","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Divisi Bangbis telah review permohonan CV Anggrek Semeru di KPH Madiun.","tl":"Monitoring tanggapan kelengkapan dan perbaikan usulan dari Divre Jatim."},"mei":{"progres":"Berdasarkan hasil review FS masih terdapat hal-hal yang perlu diperbaiki: Penanggalan dokumen, Analisa Keuangan, Narasi Bank Garansi.","tl":"Penyusunan draft surat perbaikan ke Divisi Regional Jawa Tengah."}}},"docs":{}},
+  {"seq":2,"mitra":"PT Inhutani V","objek":"Tebu","pemroses":"","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan"],"last_step":1,"current_step":"Pernyataan Minat","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Surat PT Inhutani V: Permohonan KS ATM di 2 lokasi: KPH Balapulang 10,40 Ha dan BKPH Nglambangan 105 Ha.","tl":"Koordinasi dengan IHT V terkait pelaksanaan cek lapangan."},"mei":{"progres":"Pemasukan dokumen penawaran dari PT Inhutani V, Daftar Pemasukan Dokumen Penawaran ditandatangani Kadiv Bangbis.","tl":"Review proposal bisnis PT Inhutani V untuk Negosiasi dan penyusunan Studi Kelayakan Bisnis."}}},"docs":{}},
+  {"seq":3,"mitra":"CV Wahana Multi Jaya","objek":"Tebu","pemroses":"Divre Jatim","jenis_ks":"PKS Baru","pic":"","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"mei":{"progres":"Usul permohonan BOD Meeting melalui surat Kadiv Bangbis Nomor 0084/ND/BANGBIS/2026 tanggal 08 Mei 2026.","tl":"Monitoring penyelenggaraan dan hasil BOD Meeting."}}},"docs":{}},
+  {"seq":4,"mitra":"PT Berkah Bumi Independen","objek":"Tanaman Sengon","pemroses":"Divre Jateng","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"mei":{"progres":"Usulan permohonan review draft PKS oleh Divisi Hukum dan Kepatuhan.","tl":"Monitoring usulan penerbitan Surat Kuasa Khusus (SKK)."}}},"docs":{}},
+  {"seq":5,"mitra":"CV Parta Redja Balsa","objek":"Tanaman Balsa","pemroses":"Divre Janten","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"mei":{"progres":"Monitoring hasil perbaikan dari Divre Janten.","tl":"Monitoring hasil perbaikan dari Divre Janten."}}},"docs":{}},
+  {"seq":6,"mitra":"PT Topaz Borneo Utama","objek":"Paulownia, Kelapa Bido, Cabe Jawa","pemroses":"Divre Janten","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat"],"last_step":2,"current_step":"Penyusunan KAK","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"mei":{"progres":"Permohonan diproses lebih lanjut oleh Divre Janten karena luas 30 Ha untuk pilot model.","tl":"Monitoring proses kerja sama oleh Divre Janten."}}},"docs":{}},
+  {"seq":1,"mitra":"PT Kiara Multi Lestari - Parung Panjang dan Kep Kangean","objek":"","pemroses":"Kanpus","jenis_ks":"NDA Baru","pic":"IV","kategori":"MOU/NDA/LOI Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","Rekomendasi","No SKK Dirut","Nomor PKS"],"last_step":13,"current_step":"Selesai","no_skk":"27/SKK/KUM/DIR/2025 Tanggal 22 Januari 2025","no_pks":"04/NDA/DIR-PHT/2025 Tanggal 23 Januari 2025","tahun":2026,"monthly":{},"docs":{}},
+  {"seq":2,"mitra":"Pemkab Rembang (MoU)","objek":"","pemroses":"Divre Jateng","jenis_ks":"MoU Baru","pic":"IV","kategori":"MOU/NDA/LOI Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","Rekomendasi","No SKK Dirut","Nomor PKS"],"last_step":13,"current_step":"Selesai","no_skk":"05/SKK/KUM/DIR/2025 Tanggal 6 Januari 2025","no_pks":"Belum terinfo dari Divre Jateng","tahun":2026,"monthly":{},"docs":{}},
+  {"seq":3,"mitra":"Pemkab Temanggung (MoU)","objek":"","pemroses":"Divre Jateng","jenis_ks":"MoU Baru","pic":"IV","kategori":"MOU/NDA/LOI Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","Rekomendasi","No SKK Dirut","Nomor PKS"],"last_step":13,"current_step":"Selesai","no_skk":"05/SKK/KUM/DIR/2025 Tanggal 6 Januari 2025","no_pks":"Belum terinfo dari Divre Jateng","tahun":2026,"monthly":{},"docs":{}},
+  {"seq":4,"mitra":"PT Geodipa Energi (Persero)","objek":"","pemroses":"Divre Jateng","jenis_ks":"MoU Baru","pic":"IV","kategori":"MOU/NDA/LOI Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","No SKK Dirut","Nomor PKS"],"last_step":13,"current_step":"Selesai","no_skk":"32/SKK/KUMDIR/2025 Tanggal 30 Januari 2025","no_pks":"Belum terinfo dari Divre Jateng","tahun":2026,"monthly":{},"docs":{}},
+  {"seq":1,"mitra":"PT Karunia Rejeki Abadi (Kayu Balsa dan Jabon KPH Banyuwangi Barat)","objek":"","pemroses":"Divre Jatim","jenis_ks":"PKS Baru","pic":"DR","kategori":"PKS Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS","Rekomendasi","Persetujuan Direksi/Dewas"],"last_step":13,"current_step":"Selesai","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
+  {"seq":2,"mitra":"PT Karunia Rejeki Abadi (Kayu Balsa - KPH Kediri)","objek":"","pemroses":"Divre Jatim","jenis_ks":"PKS Baru","pic":"DR","kategori":"PKS Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS","Rekomendasi","Persetujuan Direksi/Dewas"],"last_step":13,"current_step":"Selesai","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
+  {"seq":9,"mitra":"Pemkab Mojokerto dan LMDH Sri Rejeki (WW Jolotundo)","objek":"","pemroses":"KPH Pasuruan","jenis_ks":"Perpanjangan PKS","pic":"MM","kategori":"PKS Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan"],"last_step":13,"current_step":"Selesai","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
+  {"seq":10,"mitra":"Pemkab Bojonegoro (WW Kayangan Api)","objek":"","pemroses":"KPH Bjngro","jenis_ks":"Perpanjangan PKS","pic":"MM","kategori":"PKS Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan"],"last_step":13,"current_step":"Selesai","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
+  {"seq":1,"mitra":"PT Wahyu Putra Sejati (Sagara View)","objek":"","pemroses":"Divre Jateng","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Tidak Berlanjut/Batal/Berakhir","status":"Tidak Berlanjut","steps_done":["Permohonan","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
+  {"seq":2,"mitra":"PT Jasamarga Ngawi Kertosono Kediri PT","objek":"","pemroses":"Kanpus","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Tidak Berlanjut/Batal/Berakhir","status":"Tidak Berlanjut","steps_done":["Permohonan"],"last_step":1,"current_step":"Pernyataan Minat","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
+  {"seq":11,"mitra":"PT Sintesa Wira Energi","objek":"Biomassa","pemroses":"","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Tidak Berlanjut/Batal/Berakhir","status":"Tidak Berlanjut","steps_done":["Permohonan"],"last_step":1,"current_step":"Pernyataan Minat","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"PT Sintesa Wira Energi bersama Tim Divre Jateng dan KPH Pati melaksanakan survei lapangan 17-22 Desember 2025.","tl":"Monitoring laporan Studi Potensi Kerja Sama dari PT Sintesa Wira Energi."},"apr":{"progres":"Belum ada informasi kembali terkait kelanjutan permohonan kerja sama.","tl":"Komunikasi kembali kepada PT SWE terkait kelanjutan permohonan."}}},"docs":{}}
+];
+
+const STEPS_ALL = ["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS","Rekomendasi","Persetujuan Direksi/Dewas","No SKK Dirut","Nomor PKS"];
+const MONTH_KEYS = ["jan","feb","mar","apr","mei","jun","jul","agu","sep","okt","nov","des"];
+const MONTH_NAMES = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+let currentFilter = 'all';
+let currentItem = null;
+let currentView = 'list';
+let currentYear = 2026;
+let reportActiveMonth = 'jan';
+let reportActiveYear = 2026;
+
+// ==================== YEAR MANAGEMENT ====================
+function getAvailableYears() {
+  const years = new Set(DATA.map(d => d.tahun || 2026));
+  Object.keys(years); // collect from monthly too
+  DATA.forEach(d => { if (d.monthly) Object.keys(d.monthly).forEach(y => years.add(parseInt(y))); });
+  const sorted = [...years].sort();
+  if (!sorted.includes(currentYear)) sorted.push(currentYear);
+  return sorted.sort();
+}
+
+function renderYearBtns() {
+  const years = getAvailableYears();
+  const wrap = document.getElementById('year-btns');
+  wrap.innerHTML = years.map(y =>
+    `<button class="year-btn ${y===currentYear?'active':''}" onclick="setYear(${y})">${y}</button>`
+  ).join('') +
+  `<button class="year-btn" onclick="addYear()" style="background:rgba(255,255,255,0.1);border-style:dashed">＋</button>`;
+}
+
+function setYear(y) {
+  currentYear = y;
+  renderYearBtns();
+  updateStats();
+  buildList();
+  buildTable();
+  if (currentItem !== null) renderDetail(DATA[currentItem]);
+}
+
+function addYear() {
+  const y = prompt('Masukkan tahun yang ingin ditambahkan:', new Date().getFullYear() + 1);
+  if (y && !isNaN(y)) {
+    const yr = parseInt(y);
+    setYear(yr);
+  }
+}
+
+// ==================== STATUS / BADGE HELPERS ====================
+function statusBadgeClass(s) {
+  if (s === 'In Progress') return 'badge-status-InProgress';
+  if (s === 'Selesai') return 'badge-status-Selesai';
+  return 'badge-status-TidakBerlanjut';
+}
+
+function latestMonthly(d) {
+  const yearData = d.monthly && d.monthly[currentYear];
+  if (!yearData) return {progres:'', tl:''};
+  for (let i = MONTH_KEYS.length - 1; i >= 0; i--) {
+    const m = yearData[MONTH_KEYS[i]];
+    if (m && (m.progres || m.tl)) return m;
+  }
+  return {progres:'', tl:''};
+}
+
+// ==================== STATS ====================
+function updateStats() {
+  const yearData = DATA.filter(d => (d.tahun || 2026) === currentYear || (d.monthly && d.monthly[currentYear]));
+  const all = DATA.length;
+  const ip = DATA.filter(d => d.status === 'In Progress').length;
+  const done = DATA.filter(d => d.status === 'Selesai').length;
+  const batal = DATA.filter(d => d.status === 'Tidak Berlanjut').length;
+  document.getElementById('cnt-all').textContent = all;
+  document.getElementById('cnt-inprogress').textContent = ip;
+  document.getElementById('cnt-selesai').textContent = done;
+  document.getElementById('cnt-batal').textContent = batal;
+  document.getElementById('total-count').textContent = all;
+}
+
+function filterStatus(status) {
+  currentFilter = status;
+  ['all','inprogress','selesai','batal'].forEach(k => document.getElementById('stat-'+k).classList.remove('active'));
+  const map = {all:'all', 'In Progress':'inprogress', 'Selesai':'selesai', 'Tidak Berlanjut':'batal'};
+  document.getElementById('stat-'+(map[status]||'all')).classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const cat = document.getElementById('filter-cat').value;
+  const pic = document.getElementById('filter-pic').value;
+  DATA.forEach((d, idx) => {
+    const card = document.getElementById('card-'+idx);
+    if (!card) return;
+    const matchStatus = currentFilter === 'all' || d.status === currentFilter;
+    const matchQ = !q || (d.mitra||'').toLowerCase().includes(q) || (d.pemroses||'').toLowerCase().includes(q) || (d.pic||'').toLowerCase().includes(q) || (d.objek||'').toLowerCase().includes(q);
+    const matchCat = !cat || d.kategori === cat;
+    const matchPic = !pic || d.pic === pic;
+    card.classList.toggle('hidden', !(matchStatus && matchQ && matchCat && matchPic));
+  });
+}
+
+// ==================== LIST BUILD ====================
+function buildList() {
+  const panel = document.getElementById('list-panel');
+  const categories = [...new Set(DATA.map(d => d.kategori))];
+  let html = '';
+  categories.forEach(cat => {
+    const items = DATA.filter(d => d.kategori === cat);
+    html += `<div class="category-header">${cat} <span class="cat-count">${items.length}</span></div>`;
+    items.forEach(d => {
+      const idx = DATA.indexOf(d);
+      const pct = Math.round((d.last_step / 13) * 100);
+      const stepDots = STEPS_ALL.map((s, si) => {
+        const isDone = d.steps_done.includes(s);
+        const isCurrent = !isDone && si === d.last_step;
+        return `<div class="step-dot ${isDone?'done':isCurrent?'current':''}"></div>`;
+      }).join('');
+      const latest = latestMonthly(d);
+      html += `<div class="item-card" id="card-${idx}" onclick="selectItem(${idx})">
+        <div class="item-name">${d.mitra}</div>
+        <div class="item-meta">
+          <span class="badge ${statusBadgeClass(d.status)}">${d.status}</span>
+          ${d.pic ? `<span class="badge badge-pic">${d.pic}</span>` : ''}
+          ${d.jenis_ks ? `<span class="badge badge-jenis">${d.jenis_ks}</span>` : ''}
+          ${d.objek ? `<span class="badge badge-objek">${d.objek}</span>` : ''}
+        </div>
+        <div class="step-mini">${stepDots}</div>
+        ${latest.tl ? `<div class="item-tl">⤷ ${latest.tl}</div>` : ''}
+      </div>`;
+    });
+  });
+  panel.innerHTML = html;
+}
+
+// ==================== TABLE BUILD ====================
+function buildTable() {
+  const tbody = document.getElementById('table-body');
+  const categories = [...new Set(DATA.map(d => d.kategori))];
+  let html = ''; let n = 1;
+  categories.forEach(cat => {
+    html += `<tr class="cat-divider"><td colspan="10">${cat}</td></tr>`;
+    DATA.filter(d => d.kategori === cat).forEach(d => {
+      const pct = Math.round((d.last_step / 13) * 100);
+      const latest = latestMonthly(d);
+      html += `<tr>
+        <td>${n++}</td>
+        <td class="td-mitra">${d.mitra}</td>
+        <td><span class="badge badge-jenis" style="font-size:9px">${d.kategori.split('(')[0].trim()}</span></td>
+        <td>${d.jenis_ks || '—'}</td>
+        <td>${d.pemroses || '—'}</td>
+        <td>${d.pic ? `<span class="badge badge-pic">${d.pic}</span>` : '—'}</td>
+        <td><span class="badge ${statusBadgeClass(d.status)}">${d.status}</span></td>
+        <td><small>${d.current_step}</small><div class="prog-bar-sm"><div class="prog-fill-sm" style="width:${pct}%"></div></div></td>
+        <td class="td-progres">${latest.progres || '—'}</td>
+        <td class="td-progres">${latest.tl || '—'}</td>
+      </tr>`;
+    });
+  });
+  tbody.innerHTML = html;
+}
+
+// ==================== DETAIL RENDER ====================
+function selectItem(idx) {
+  document.querySelectorAll('.item-card').forEach(c => c.classList.remove('active'));
+  const card = document.getElementById('card-'+idx);
+  if (card) card.classList.add('active');
+  currentItem = idx;
+  renderDetail(DATA[idx]);
+}
+
+function renderDetail(d) {
+  const idx = DATA.indexOf(d);
+  const panel = document.getElementById('detail-panel');
+  const pct = Math.round((d.last_step / 13) * 100);
+
+  // Steps with upload indicators
+  const stepsHtml = STEPS_ALL.map((s, i) => {
+    const isDone = d.steps_done.includes(s);
+    const isCurrent = d.current_step === s && !isDone && d.status !== 'Selesai';
+    const cls = isDone ? 'done' : isCurrent ? 'current' : '';
+    const icon = isDone ? '✓' : (i + 1);
+    const stepDocs = (d.docs && d.docs[s]) ? d.docs[s] : [];
+    const hasDoc = stepDocs.length > 0;
+    return `<div class="step-item ${cls}" title="${s}" onclick="openUploadStep(${idx},'${s}')">
+      <div class="step-circle">${icon}</div>
+      <div class="step-label">${s}</div>
+      ${hasDoc ? `<div class="step-upload-indicator" title="${stepDocs.length} dokumen">📎</div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Monthly sections
+  const yearData = (d.monthly && d.monthly[currentYear]) || {};
+  const monthsHtml = MONTH_KEYS.map((key, mi) => {
+    const m = yearData[key];
+    const progres = m && m.progres;
+    const tl = m && m.tl;
+    const hasContent = progres || tl;
+    const isLatest = key === getLatestMonthKey(yearData);
+    return `<div class="month-card ${isLatest ? 'full' : ''}">
+      <div class="month-header ${hasContent ? '' : 'empty'}">
+        <span>${MONTH_NAMES[mi]} ${currentYear}${isLatest ? ' — Terkini' : ''}</span>
+        ${hasContent ? '<span>✓</span>' : '<span style="opacity:0.5">–</span>'}
+      </div>
+      <div class="month-body">
+        ${progres ? `<div class="month-section"><div class="month-label">📋 Progres</div><div class="month-text">${progres}</div></div>` : ''}
+        ${tl ? `<div class="month-section"><div class="month-label">⤷ Tindak Lanjut</div><div class="month-text tl">${tl}</div></div>` : ''}
+        ${!hasContent ? `<div class="month-empty">Tidak ada catatan bulan ini</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Document sections per step
+  const docsHtml = buildDocsHtml(d, idx);
+
+  panel.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-header-top">
+        <div class="detail-title">${d.mitra}</div>
+      </div>
+      <div class="detail-badges">
+        <span class="badge ${statusBadgeClass(d.status)}">${d.status}</span>
+        ${d.pic ? `<span class="badge badge-pic">${d.pic}</span>` : ''}
+        ${d.jenis_ks ? `<span class="badge badge-jenis">${d.jenis_ks}</span>` : ''}
+        ${d.objek ? `<span class="badge badge-objek">${d.objek}</span>` : ''}
+        <span class="badge" style="background:#f0f4f0;color:#6b8f71">${d.kategori}</span>
+      </div>
+      <div class="detail-actions">
+        <button class="btn-edit" onclick="openEditMitra(${idx})">✏️ Edit Data</button>
+        <button class="btn-add-report" onclick="openAddReport(${idx})">＋ Laporan Bulanan</button>
+      </div>
+    </div>
+    <div class="detail-content">
+      <div class="meta-grid">
+        <div class="meta-item"><span class="meta-key">Pemroses</span><span class="meta-val ${d.pemroses?'':'empty'}">${d.pemroses||'—'}</span></div>
+        <div class="meta-item"><span class="meta-key">Jenis Kerja Sama</span><span class="meta-val ${d.jenis_ks?'':'empty'}">${d.jenis_ks||'—'}</span></div>
+        <div class="meta-item"><span class="meta-key">No SKK Dirut</span><span class="meta-val code ${d.no_skk?'':'empty'}">${d.no_skk||'—'}</span></div>
+        <div class="meta-item"><span class="meta-key">Nomor Perjanjian</span><span class="meta-val code ${d.no_pks?'':'empty'}">${d.no_pks||'—'}</span></div>
+      </div>
+
+      <div class="steps-track">
+        <div class="steps-track-title">Tahapan Proses Kerja Sama <small style="font-weight:400;text-transform:none;letter-spacing:0">(klik tahap untuk upload dokumen)</small></div>
+        <div class="steps-flow">${stepsHtml}</div>
+        <div class="step-pct">
+          <div class="pct-bar"><div class="pct-fill ${pct<100?'amber':''}" style="width:${pct}%"></div></div>
+          <span class="pct-num">${pct}%</span>
+          <span style="font-size:10px;color:var(--muted)">Tahap berikutnya: <strong>${d.current_step}</strong></span>
+        </div>
+      </div>
+
+      ${docsHtml}
+
+      <div class="monthly-header">
+        <div class="monthly-title">Riwayat Progress Bulanan — ${currentYear}</div>
+      </div>
+      <div class="monthly-grid">${monthsHtml}</div>
+    </div>`;
+}
+
+function getLatestMonthKey(yearData) {
+  for (let i = MONTH_KEYS.length - 1; i >= 0; i--) {
+    const m = yearData[MONTH_KEYS[i]];
+    if (m && (m.progres || m.tl)) return MONTH_KEYS[i];
+  }
+  return null;
+}
+
+function buildDocsHtml(d, idx) {
+  if (!d.docs || Object.keys(d.docs).length === 0) {
+    return `<div class="doc-section">
+      <div class="doc-section-title">📎 Dokumen per Tahapan <span style="font-weight:400;font-size:10px;text-transform:none">(klik lingkaran tahap di atas untuk upload)</span></div>
+      <div class="no-docs">Belum ada dokumen. Klik tahapan di atas untuk mengupload dokumen.</div>
+    </div>`;
+  }
+  let groupsHtml = '';
+  STEPS_ALL.forEach(step => {
+    const docs = d.docs[step] || [];
+    if (docs.length === 0) return;
+    groupsHtml += `<div class="doc-step-group">
+      <div class="doc-step-name">${step}
+        <button class="btn-upload-doc" onclick="openUploadStep(${idx},'${step}')">＋ Tambah</button>
+      </div>
+      <div class="doc-list">
+        ${docs.map((doc, di) => `
+          <div class="doc-item">
+            <span class="doc-item-icon">${getFileIcon(doc.name)}</span>
+            <span class="doc-item-name" title="${doc.name}">${doc.name}</span>
+            ${doc.desc ? `<span style="font-size:10px;color:var(--muted)">${doc.desc}</span>` : ''}
+            <span class="doc-item-date">${doc.date}</span>
+            <button class="doc-item-del" onclick="deleteDoc(${idx},'${step}',${di})" title="Hapus">✕</button>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  });
+  return `<div class="doc-section">
+    <div class="doc-section-title">📎 Dokumen per Tahapan</div>
+    ${groupsHtml}
+  </div>`;
+}
+
+function getFileIcon(name) {
+  if (!name) return '📄';
+  const ext = name.split('.').pop().toLowerCase();
+  if (['pdf'].includes(ext)) return '📕';
+  if (['doc','docx'].includes(ext)) return '📘';
+  if (['xls','xlsx'].includes(ext)) return '📗';
+  if (['jpg','jpeg','png','gif'].includes(ext)) return '🖼️';
+  if (['zip','rar'].includes(ext)) return '🗜️';
+  return '📄';
+}
+
+// ==================== VIEW SWITCHING ====================
+function setView(v) {
+  currentView = v;
+  ['list','table','dashboard'].forEach(k => {
+    document.getElementById('btn-'+k).classList.toggle('active', k===v);
+  });
+  document.getElementById('list-view').style.display = v==='list' ? 'flex' : 'none';
+  const tv = document.getElementById('table-view');
+  tv.style.display = v==='table' ? 'block' : 'none';
+  tv.classList.toggle('active', v==='table');
+  const dv = document.getElementById('dashboard-view');
+  dv.classList.toggle('active', v==='dashboard');
+  if (v === 'dashboard') buildDashboard();
+}
+
+// ==================== DASHBOARD ====================
+function buildDashboard() {
+  const ip = DATA.filter(d => d.status === 'In Progress').length;
+  const done = DATA.filter(d => d.status === 'Selesai').length;
+  const batal = DATA.filter(d => d.status === 'Tidak Berlanjut').length;
+  const total = DATA.length;
+
+  // Donut
+  buildDonut(ip, done, batal, total);
+
+  // PIC bars
+  const pics = ['MM','ABM','DR','IV','VA'];
+  let picHtml = '';
+  pics.forEach(p => {
+    const cnt = DATA.filter(d => d.pic === p).length;
+    const cntIP = DATA.filter(d => d.pic === p && d.status === 'In Progress').length;
+    if (cnt === 0) return;
+    picHtml += `<div class="pic-row">
+      <div class="pic-avatar">${p}</div>
+      <div class="pic-info">
+        <div class="pic-name">${p} — ${cnt} mitra (${cntIP} in progress)</div>
+        <div class="pic-bar-track"><div class="pic-bar-fill" style="width:${(cnt/total*100).toFixed(0)}%"></div></div>
+      </div>
+      <div class="pic-count">${cnt}</div>
+    </div>`;
+  });
+  document.getElementById('dash-pic-bars').innerHTML = picHtml;
+
+  // Category bars
+  const cats = [...new Set(DATA.map(d => d.kategori))];
+  const colors = ['#52b788','#e9c46a','#457b9d','#7b5ea7','#e63946'];
+  let catHtml = '';
+  cats.forEach((cat, ci) => {
+    const cnt = DATA.filter(d => d.kategori === cat).length;
+    catHtml += `<div class="chart-bar-row">
+      <div class="chart-bar-label" title="${cat}">${cat}</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${(cnt/total*100).toFixed(0)}%;background:${colors[ci%colors.length]}">${cnt > 2 ? cnt : ''}</div></div>
+      <div class="chart-bar-count">${cnt}</div>
+    </div>`;
+  });
+  document.getElementById('dash-cat-bars').innerHTML = catHtml;
+
+  // Step distribution for in-progress
+  const ipData = DATA.filter(d => d.status === 'In Progress');
+  const stepCounts = {};
+  STEPS_ALL.forEach(s => { stepCounts[s] = 0; });
+  ipData.forEach(d => { if (d.current_step && stepCounts[d.current_step] !== undefined) stepCounts[d.current_step]++; });
+  const maxStep = Math.max(...Object.values(stepCounts), 1);
+  let stepHtml = '';
+  STEPS_ALL.forEach(s => {
+    const cnt = stepCounts[s];
+    if (cnt === 0) return;
+    stepHtml += `<div class="step-dist-row">
+      <div class="step-dist-name">${s}</div>
+      <div class="step-dist-bar"><div class="step-dist-fill" style="width:${(cnt/maxStep*100).toFixed(0)}%"></div></div>
+      <div class="step-dist-count">${cnt}</div>
+    </div>`;
+  });
+  document.getElementById('dash-step-dist').innerHTML = stepHtml || '<div style="color:var(--muted);font-size:11px">Tidak ada kerja sama in progress.</div>';
+
+  // KPI
+  const pctDone = total > 0 ? (done/total*100).toFixed(0) : 0;
+  const avgPct = total > 0 ? Math.round(DATA.reduce((a,d) => a + d.last_step/13*100, 0)/total) : 0;
+  const withDocs = DATA.filter(d => d.docs && Object.keys(d.docs).length > 0).length;
+  document.getElementById('dash-kpi').innerHTML = `
+    <div class="kpi-item"><div class="kpi-val" style="color:var(--leaf)">${pctDone}%</div><div class="kpi-lbl">Tingkat Penyelesaian</div></div>
+    <div class="kpi-item"><div class="kpi-val" style="color:var(--blue)">${avgPct}%</div><div class="kpi-lbl">Rata-rata Progress Tahapan</div></div>
+    <div class="kpi-item"><div class="kpi-val" style="color:var(--purple)">${withDocs}</div><div class="kpi-lbl">Mitra Punya Dokumen</div></div>
+  `;
+}
+
+function buildDonut(ip, done, batal, total) {
+  const wrap = document.getElementById('dash-donut-wrap');
+  const size = 100; const r = 36; const cx = 50; const cy = 50;
+  const circumference = 2 * Math.PI * r;
+  const segments = [
+    { val: ip, color: '#e9c46a', label: 'In Progress' },
+    { val: done, color: '#52b788', label: 'Selesai' },
+    { val: batal, color: '#e63946', label: 'Tidak Berlanjut' },
+  ];
+  let offset = 0;
+  let paths = '';
+  segments.forEach(seg => {
+    const frac = total > 0 ? seg.val / total : 0;
+    const dash = frac * circumference;
+    const gap = circumference - dash;
+    paths += `<circle r="${r}" cx="${cx}" cy="${cy}" fill="transparent" stroke="${seg.color}" stroke-width="20"
+      stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += frac * circumference;
+  });
+  const svg = `<svg class="donut-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle r="${r}" cx="${cx}" cy="${cy}" fill="transparent" stroke="#e8ead0" stroke-width="20"/>
+    ${paths}
+    <text x="${cx}" y="${cy}" text-anchor="middle" dy="4" font-size="14" font-weight="700" fill="#1a3a2a">${total}</text>
+  </svg>`;
+  const legend = segments.map(seg =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${seg.color}"></div><span>${seg.label}: <strong>${seg.val}</strong></span></div>`
+  ).join('');
+  wrap.innerHTML = svg + `<div class="donut-legend">${legend}</div>`;
+}
+
+// ==================== MODAL: ADD/EDIT MITRA ====================
+function populateStepChecks(stepsDone) {
+  const grid = document.getElementById('steps-check-grid');
+  grid.innerHTML = STEPS_ALL.map((s, i) =>
+    `<label class="step-check-item">
+      <input type="checkbox" name="step" value="${s}" ${(stepsDone||[]).includes(s)?'checked':''}>
+      <span>${s}</span>
+    </label>`
+  ).join('');
+}
+
+function populateStepSelect(currentStep) {
+  const sel = document.getElementById('f-current-step');
+  sel.innerHTML = STEPS_ALL.map(s => `<option value="${s}" ${s===currentStep?'selected':''}>${s}</option>`).join('') +
+    `<option value="Selesai" ${currentStep==='Selesai'?'selected':''}>Selesai</option>`;
+}
+
+function populateYearSelect(selId, selectedYear) {
+  const sel = document.getElementById(selId);
+  const years = [];
+  for (let y = 2023; y <= new Date().getFullYear() + 3; y++) years.push(y);
+  sel.innerHTML = years.map(y => `<option value="${y}" ${y===selectedYear?'selected':''}>${y}</option>`).join('');
+}
+
+function openAddMitra() {
+  document.getElementById('modal-mitra-title').textContent = 'Tambah Mitra Baru';
+  document.getElementById('edit-idx').value = '';
+  document.getElementById('btn-delete-mitra').style.display = 'none';
+  ['f-mitra','f-objek','f-pemroses','f-no-skk','f-no-pks'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-pic').value = '';
+  document.getElementById('f-jenis').value = '';
+  document.getElementById('f-kategori').value = '';
+  document.getElementById('f-status').value = 'In Progress';
+  populateYearSelect('f-tahun', currentYear);
+  populateStepSelect('Permohonan');
+  populateStepChecks([]);
+  openModal('modal-mitra');
+}
+
+function openEditMitra(idx) {
+  const d = DATA[idx];
+  document.getElementById('modal-mitra-title').textContent = 'Edit Data Mitra';
+  document.getElementById('edit-idx').value = idx;
+  document.getElementById('btn-delete-mitra').style.display = 'inline-flex';
+  document.getElementById('f-mitra').value = d.mitra || '';
+  document.getElementById('f-objek').value = d.objek || '';
+  document.getElementById('f-pemroses').value = d.pemroses || '';
+  document.getElementById('f-pic').value = d.pic || '';
+  document.getElementById('f-jenis').value = d.jenis_ks || '';
+  document.getElementById('f-kategori').value = d.kategori || '';
+  document.getElementById('f-status').value = d.status || 'In Progress';
+  document.getElementById('f-no-skk').value = d.no_skk || '';
+  document.getElementById('f-no-pks').value = d.no_pks || '';
+  populateYearSelect('f-tahun', d.tahun || currentYear);
+  populateStepSelect(d.current_step);
+  populateStepChecks(d.steps_done);
+  openModal('modal-mitra');
+}
+
+function saveMitra() {
+  const idxVal = document.getElementById('edit-idx').value;
+  const mitra = document.getElementById('f-mitra').value.trim();
+  if (!mitra) { alert('Nama mitra tidak boleh kosong.'); return; }
+  const stepsDone = [...document.querySelectorAll('#steps-check-grid input:checked')].map(el => el.value);
+  const currentStep = document.getElementById('f-current-step').value;
+  const last_step = STEPS_ALL.indexOf(currentStep) !== -1 ? STEPS_ALL.indexOf(currentStep) : (currentStep === 'Selesai' ? 13 : 0);
+  const tahun = parseInt(document.getElementById('f-tahun').value);
+  const obj = {
+    seq: 99, mitra,
+    objek: document.getElementById('f-objek').value.trim(),
+    pemroses: document.getElementById('f-pemroses').value.trim(),
+    pic: document.getElementById('f-pic').value,
+    jenis_ks: document.getElementById('f-jenis').value,
+    kategori: document.getElementById('f-kategori').value,
+    status: document.getElementById('f-status').value,
+    no_skk: document.getElementById('f-no-skk').value.trim(),
+    no_pks: document.getElementById('f-no-pks').value.trim(),
+    steps_done: stepsDone, last_step, current_step: currentStep,
+    tahun, monthly: {}, docs: {}
+  };
+  if (idxVal === '') {
+    DATA.push(obj);
+    showToast('✅ Mitra berhasil ditambahkan!');
+  } else {
+    const idx = parseInt(idxVal);
+    obj.monthly = DATA[idx].monthly || {};
+    obj.docs = DATA[idx].docs || {};
+    DATA[idx] = obj;
+    showToast('✅ Data mitra berhasil diperbarui!');
+    selectItem(idx);
+  }
+  closeModal('modal-mitra');
+  updateStats(); buildList(); buildTable();
+}
+
+function deleteMitra() {
+  const idx = parseInt(document.getElementById('edit-idx').value);
+  if (!confirm(`Hapus "${DATA[idx].mitra}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+  DATA.splice(idx, 1);
+  closeModal('modal-mitra');
+  document.getElementById('detail-panel').innerHTML = `<div class="detail-empty"><div class="detail-empty-icon">🌿</div><div style="font-weight:600">Pilih mitra untuk melihat detail</div></div>`;
+  currentItem = null;
+  updateStats(); buildList(); buildTable();
+  showToast('🗑 Mitra berhasil dihapus.');
+}
+
+// ==================== MODAL: REPORT BULANAN ====================
+function updateMonthOptions() {}
+
+function openAddReport(idx) {
+  document.getElementById('report-idx').value = idx;
+  document.getElementById('report-mitra-name').textContent = DATA[idx].mitra;
+  populateYearSelect('report-year-sel', currentYear);
+  reportActiveYear = currentYear;
+  reportActiveMonth = MONTH_KEYS[new Date().getMonth()] || 'jan';
+  renderReportMonthTabs();
+  loadReportFields();
+  openModal('modal-report');
+}
+
+function updateReportMonthTabs() {
+  reportActiveYear = parseInt(document.getElementById('report-year-sel').value);
+  renderReportMonthTabs();
+  loadReportFields();
+}
+
+function renderReportMonthTabs() {
+  const wrap = document.getElementById('report-month-tabs');
+  const idx = parseInt(document.getElementById('report-idx').value);
+  const d = DATA[idx];
+  wrap.innerHTML = MONTH_KEYS.map((key, mi) => {
+    const hasData = d.monthly && d.monthly[reportActiveYear] && d.monthly[reportActiveYear][key] && (d.monthly[reportActiveYear][key].progres || d.monthly[reportActiveYear][key].tl);
+    return `<button class="month-tab ${key===reportActiveMonth?'active':''}" onclick="selectReportMonth('${key}')">${MONTH_NAMES[mi].substring(0,3)}${hasData?'●':''}</button>`;
+  }).join('');
+}
+
+function selectReportMonth(key) {
+  reportActiveMonth = key;
+  renderReportMonthTabs();
+  loadReportFields();
+}
+
+function loadReportFields() {
+  const idx = parseInt(document.getElementById('report-idx').value);
+  const d = DATA[idx];
+  const monthData = (d.monthly && d.monthly[reportActiveYear] && d.monthly[reportActiveYear][reportActiveMonth]) || {};
+  document.getElementById('report-progres').value = monthData.progres || '';
+  document.getElementById('report-tl').value = monthData.tl || '';
+}
+
+function saveReport() {
+  const idx = parseInt(document.getElementById('report-idx').value);
+  const d = DATA[idx];
+  if (!d.monthly) d.monthly = {};
+  if (!d.monthly[reportActiveYear]) d.monthly[reportActiveYear] = {};
+  d.monthly[reportActiveYear][reportActiveMonth] = {
+    progres: document.getElementById('report-progres').value.trim(),
+    tl: document.getElementById('report-tl').value.trim()
+  };
+  closeModal('modal-report');
+  renderDetail(d);
+  buildList();
+  showToast(`✅ Laporan ${MONTH_NAMES[MONTH_KEYS.indexOf(reportActiveMonth)]} ${reportActiveYear} disimpan!`);
+}
+
+// ==================== MODAL: UPLOAD DOKUMEN ====================
+function openUploadStep(idx, step) {
+  document.getElementById('upload-idx').value = idx;
+  document.getElementById('upload-step').value = step;
+  document.getElementById('upload-step-label').textContent = `📁 Tahap: ${step}`;
+  document.getElementById('upload-mitra-label').textContent = DATA[idx].mitra;
+  document.getElementById('upload-file').value = '';
+  document.getElementById('upload-desc').value = '';
+  document.getElementById('upload-preview').style.display = 'none';
+  document.getElementById('upload-file').onchange = previewUploadFiles;
+  openModal('modal-upload');
+}
+
+function previewUploadFiles() {
+  const files = document.getElementById('upload-file').files;
+  const preview = document.getElementById('upload-preview');
+  const list = document.getElementById('upload-preview-list');
+  if (files.length === 0) { preview.style.display = 'none'; return; }
+  preview.style.display = 'block';
+  list.innerHTML = [...files].map(f =>
+    `<div class="doc-item"><span>${getFileIcon(f.name)}</span><span class="doc-item-name">${f.name}</span><span class="doc-item-date">${(f.size/1024).toFixed(1)} KB</span></div>`
+  ).join('');
+}
+
+function saveUpload() {
+  const idx = parseInt(document.getElementById('upload-idx').value);
+  const step = document.getElementById('upload-step').value;
+  const desc = document.getElementById('upload-desc').value.trim();
+  const files = document.getElementById('upload-file').files;
+  if (files.length === 0) { alert('Pilih file terlebih dahulu.'); return; }
+  const d = DATA[idx];
+  if (!d.docs) d.docs = {};
+  if (!d.docs[step]) d.docs[step] = [];
+  const today = new Date().toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'});
+  [...files].forEach(f => {
+    d.docs[step].push({ name: f.name, desc, date: today, size: f.size });
+  });
+  closeModal('modal-upload');
+  renderDetail(d);
+  showToast(`📎 ${files.length} dokumen berhasil ditambahkan ke "${step}"`);
+}
+
+function deleteDoc(idx, step, di) {
+  if (!confirm('Hapus dokumen ini?')) return;
+  DATA[idx].docs[step].splice(di, 1);
+  if (DATA[idx].docs[step].length === 0) delete DATA[idx].docs[step];
+  renderDetail(DATA[idx]);
+  showToast('🗑 Dokumen dihapus.');
+}
+
+// ==================== MODAL UTILS ====================
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden')); });
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ==================== GOOGLE SHEETS API ====================
+// 🔧 GANTI URL INI DENGAN URL APPS SCRIPT ANDA SETELAH DEPLOY
+const APPS_SCRIPT_URL = 'PASTE_URL_DISINI';
+
+let isConnected = false;
+let isSyncing = false;
+
+// ── API Helper ──────────────────────────────────────────────
+async function apiCall(action, data = {}) {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'PASTE_URL_DISINI') {
+    throw new Error('URL Apps Script belum dikonfigurasi.');
+  }
+  const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','importData'].includes(action);
+  if (isWrite) {
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action, ...data })
+    });
+    return resp.json();
+  } else {
+    const params = new URLSearchParams({ action, ...data });
+    const resp = await fetch(`${APPS_SCRIPT_URL}?${params}`);
+    return resp.json();
+  }
+}
+
+// ── Load semua data dari Sheets ─────────────────────────────
+async function loadFromSheets() {
+  showSyncBadge('⏳ Memuat data…', 'loading');
+  try {
+    const res = await apiCall('getAll');
+    if (!res.success) throw new Error(res.error);
+    const raw = res.data.mitra;
+
+    if (raw.length === 0) {
+      // Sheets terhubung tapi masih kosong — jangan overwrite data default
+      isConnected = true;
+      showSyncBadge('✅ Terhubung · Sheets kosong', 'ok');
+      showImportBanner(); // tampilkan banner import
+      renderYearBtns(); updateStats(); buildList(); buildTable();
+      return;
+    }
+
+    // Sheets punya data — gunakan data dari Sheets
+    DATA = raw.map(m => ({
+      ...m,
+      last_step: parseInt(m.last_step) || 0,
+      tahun: parseInt(m.tahun) || 2026,
+      steps_done: Array.isArray(m.steps_done) ? m.steps_done : [],
+    }));
+    isConnected = true;
+    hideImportBanner();
+    showSyncBadge(`✅ Terhubung · ${DATA.length} mitra`, 'ok');
+    renderYearBtns(); updateStats(); buildList(); buildTable();
+    if (currentItem !== null && DATA[currentItem]) renderDetail(DATA[currentItem]);
+  } catch (err) {
+    isConnected = false;
+    showSyncBadge('⚠️ Offline — data lokal', 'warn');
+    console.warn('Gagal load dari Sheets:', err);
+  }
+}
+
+function showImportBanner() {
+  let banner = document.getElementById('import-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'import-banner';
+    banner.style.cssText = `
+      position:fixed; top:0; left:0; right:0; z-index:800;
+      background:#1a3a2a; color:white; padding:10px 20px;
+      display:flex; align-items:center; justify-content:center; gap:14px;
+      font-size:12px; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    `;
+    banner.innerHTML = `
+      <span>✅ Terhubung ke Google Sheets. Sheets masih kosong — </span>
+      <button onclick="importDataToSheets()" style="
+        background:#52b788; color:#1a3a2a; border:none; padding:6px 16px;
+        border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;
+      ">📤 Import Data Sekarang</button>
+      <button onclick="hideImportBanner()" style="
+        background:transparent; color:rgba(255,255,255,0.6); border:none;
+        font-size:16px; cursor:pointer; padding:0 4px;
+      ">✕</button>
+    `;
+    document.body.prepend(banner);
+  }
+  banner.style.display = 'flex';
+}
+
+function hideImportBanner() {
+  const banner = document.getElementById('import-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+// ── Sync saveMitra ──────────────────────────────────────────
+async function syncSaveMitra(mitraObj) {
+  if (!isConnected) return;
+  showSyncBadge('💾 Menyimpan…', 'loading');
+  try {
+    const payload = { ...mitraObj, steps_done: JSON.stringify(mitraObj.steps_done) };
+    const res = await apiCall('saveMitra', { data: payload });
+    if (!res.success) throw new Error(res.error);
+    // Jika insert baru, simpan id yang digenerate server
+    if (!mitraObj.id && res.data && res.data.id) {
+      const idx = DATA.findIndex(d => d.mitra === mitraObj.mitra && !d.id);
+      if (idx !== -1) DATA[idx].id = res.data.id;
+    }
+    showSyncBadge('✅ Tersimpan', 'ok');
+  } catch (err) {
+    showSyncBadge('❌ Gagal simpan', 'err');
+    console.error('syncSaveMitra error:', err);
+  }
+}
+
+// ── Sync deleteMitra ────────────────────────────────────────
+async function syncDeleteMitra(id) {
+  if (!isConnected || !id) return;
+  try {
+    await apiCall('deleteMitra', { data: { id } });
+  } catch (err) { console.error('syncDeleteMitra error:', err); }
+}
+
+// ── Sync saveMonthly ────────────────────────────────────────
+async function syncSaveMonthly(mitraId, tahun, bulan, progres, tl) {
+  if (!isConnected || !mitraId) return;
+  showSyncBadge('💾 Menyimpan laporan…', 'loading');
+  try {
+    const res = await apiCall('saveMonthly', { data: { mitra_id: mitraId, tahun, bulan, progres, tindak_lanjut: tl } });
+    if (!res.success) throw new Error(res.error);
+    showSyncBadge('✅ Laporan tersimpan', 'ok');
+  } catch (err) {
+    showSyncBadge('❌ Gagal simpan laporan', 'err');
+    console.error('syncSaveMonthly error:', err);
+  }
+}
+
+// ── Sync saveDokumen ────────────────────────────────────────
+async function syncSaveDokumen(mitraId, step, nama_file, deskripsi, ukuran_kb) {
+  if (!isConnected || !mitraId) return;
+  try {
+    const res = await apiCall('saveDokumen', { data: { mitra_id: mitraId, step, nama_file, deskripsi, ukuran_kb } });
+    if (!res.success) throw new Error(res.error);
+    // Simpan doc id dari server
+    return res.data && res.data.id;
+  } catch (err) {
+    console.error('syncSaveDokumen error:', err);
+  }
+}
+
+// ── Sync deleteDokumen ──────────────────────────────────────
+async function syncDeleteDokumen(docId) {
+  if (!isConnected || !docId) return;
+  try {
+    await apiCall('deleteDokumen', { data: { id: docId } });
+  } catch (err) { console.error('syncDeleteDokumen error:', err); }
+}
+
+// ── Import data lokal ke Sheets ─────────────────────────────
+async function importDataToSheets() {
+  if (DATA.length === 0) {
+    showToast('⚠️ Tidak ada data untuk diimport.');
+    return;
+  }
+  if (!confirm(`Import ${DATA.length} mitra ke Google Sheets?\n\nPastikan Sheets masih kosong untuk menghindari duplikat.`)) return;
+  showSyncBadge('⏳ Mengimpor ' + DATA.length + ' mitra…', 'loading');
+  try {
+    const res = await apiCall('importData', { data: { mitra: DATA } });
+    if (!res.success) throw new Error(res.error);
+    const r = res.data.imported;
+    showToast(`✅ Import selesai: ${r.mitra} mitra, ${r.monthly} laporan, ${r.docs} dokumen`);
+    showSyncBadge('✅ Import selesai', 'ok');
+    hideImportBanner();
+    await loadFromSheets(); // reload dari server untuk dapat id yang benar
+  } catch (err) {
+    showSyncBadge('❌ Gagal import', 'err');
+    showToast('❌ Import gagal: ' + err.message);
+    console.error(err);
+  }
+}
+
+// ── Sync badge UI ───────────────────────────────────────────
+function showSyncBadge(msg, state) {
+  const badge = document.getElementById('sync-badge');
+  if (!badge) return;
+  badge.textContent = msg;
+  badge.className = 'sync-badge sync-' + state;
+  if (state === 'ok') setTimeout(() => { badge.textContent = isConnected ? '✅ Terhubung ke Sheets' : '⚠️ Offline'; badge.className = 'sync-badge sync-ok'; }, 3000);
+}
+
+// ── PATCH: override saveMitra untuk juga sync ke Sheets ─────
+const _origSaveMitra = saveMitra;
+saveMitra = function() {
+  _origSaveMitra();
+  // Sync mitra terbaru (yang baru disimpan)
+  const idxVal = document.getElementById('edit-idx').value;
+  const targetIdx = idxVal !== '' ? parseInt(idxVal) : DATA.length - 1;
+  if (DATA[targetIdx]) syncSaveMitra(DATA[targetIdx]);
+};
+
+// ── PATCH: override deleteMitra ─────────────────────────────
+const _origDeleteMitra = deleteMitra;
+deleteMitra = function() {
+  const idx = parseInt(document.getElementById('edit-idx').value);
+  const id = DATA[idx] && DATA[idx].id;
+  _origDeleteMitra();
+  if (id) syncDeleteMitra(id);
+};
+
+// ── PATCH: override saveReport ───────────────────────────────
+const _origSaveReport = saveReport;
+saveReport = function() {
+  _origSaveReport();
+  const idx = parseInt(document.getElementById('report-idx').value);
+  const d = DATA[idx];
+  if (d && d.id) {
+    const progres = document.getElementById('report-progres') ? document.getElementById('report-progres').value : '';
+    const tl = document.getElementById('report-tl') ? document.getElementById('report-tl').value : '';
+    syncSaveMonthly(d.id, reportActiveYear, reportActiveMonth, progres, tl);
+  }
+};
+
+// ── PATCH: override saveUpload ───────────────────────────────
+const _origSaveUpload = saveUpload;
+saveUpload = function() {
+  const idx = parseInt(document.getElementById('upload-idx').value);
+  const step = document.getElementById('upload-step').value;
+  const d = DATA[idx];
+  _origSaveUpload();
+  // Sync setiap file
+  if (d && d.docs && d.docs[step]) {
+    const files = d.docs[step];
+    const latest = files[files.length - 1];
+    if (latest && d.id) {
+      syncSaveDokumen(d.id, step, latest.name, latest.desc || '', Math.round((latest.size||0)/1024)).then(docId => {
+        if (docId) latest.id = docId;
+      });
+    }
+  }
+};
+
+// ── PATCH: override deleteDoc ────────────────────────────────
+const _origDeleteDoc = deleteDoc;
+deleteDoc = function(idx, step, di) {
+  const docId = DATA[idx] && DATA[idx].docs && DATA[idx].docs[step] && DATA[idx].docs[step][di] && DATA[idx].docs[step][di].id;
+  _origDeleteDoc(idx, step, di);
+  if (docId) syncDeleteDokumen(docId);
+};
+
+// ==================== INIT ====================
+renderYearBtns();
+updateStats();
+buildList();
+buildTable();
+
+// Auto-load dari Google Sheets jika URL sudah dikonfigurasi
+if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'PASTE_URL_DISINI') {
+  loadFromSheets();
+}
+</script>
+
+<!-- ── SYNC BADGE & SETTINGS BUTTON ── -->
+<style>
+  .sync-bar { position: fixed; bottom: 14px; left: 14px; display: flex; gap: 8px; align-items: center; z-index: 500; }
+  .sync-badge { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 20px; background: white; border: 1px solid var(--border); color: var(--muted); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .sync-ok   { background: var(--green-light); color: var(--leaf); border-color: var(--sage); }
+  .sync-warn { background: #fff9c4; color: #b45309; border-color: #fcd34d; }
+  .sync-err  { background: var(--red-light); color: var(--red); border-color: var(--red); }
+  .sync-loading { background: var(--blue-light); color: var(--blue); border-color: var(--blue); }
+  .btn-settings { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 11px; font-weight: 600; cursor: pointer; color: var(--muted); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .btn-settings:hover { background: var(--forest); color: white; }
+  /* SETTINGS MODAL */
+  .settings-section { margin-bottom: 18px; }
+  .settings-title { font-size: 12px; font-weight: 700; color: var(--forest); margin-bottom: 8px; }
+  .settings-desc { font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.6; }
+  .url-input-wrap { display: flex; gap: 6px; }
+  .url-input-wrap input { flex: 1; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .dot-ok { background: var(--sage); }
+  .dot-warn { background: var(--amber); }
+  .dot-err { background: var(--red); }
+</style>
+
+<div class="sync-bar">
+  <div class="sync-badge sync-warn" id="sync-badge">⚠️ Belum terhubung ke Sheets</div>
+  <button class="btn-settings" onclick="openModal('modal-settings')">⚙️ Pengaturan</button>
+</div>
+
+<!-- MODAL SETTINGS -->
+<div class="modal-overlay hidden" id="modal-settings">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Pengaturan Google Sheets</div>
+      <button class="modal-close" onclick="closeModal('modal-settings')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="settings-section">
+        <div class="settings-title">🔗 URL Google Apps Script</div>
+        <div class="settings-desc">
+          Paste URL Web App deployment dari Google Apps Script Anda di sini.
+          URL berbentuk: <code style="background:#f0f4f0;padding:1px 5px;border-radius:3px;font-size:10px">https://script.google.com/macros/s/ABC.../exec</code>
+        </div>
+        <div class="url-input-wrap">
+          <input type="text" class="form-input" id="settings-url" placeholder="https://script.google.com/macros/s/.../exec"
+            value="">
+          <button class="btn-primary" onclick="saveSettingsUrl()" style="white-space:nowrap">💾 Simpan & Hubungkan</button>
+        </div>
+        <div id="conn-status" style="margin-top:8px;font-size:11px;color:var(--muted)">
+          <span class="status-dot dot-warn"></span> Belum dikonfigurasi
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">📥 Import Data Lokal → Google Sheets</div>
+        <div class="settings-desc">
+          Jalankan sekali untuk memindahkan semua data yang ada ke Google Sheets.
+          <strong>Pastikan Sheets masih kosong</strong> sebelum import untuk menghindari duplikat.
+        </div>
+        <button class="btn-primary" onclick="importDataToSheets()">📤 Import Data ke Google Sheets</button>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">🔄 Refresh Data dari Sheets</div>
+        <div class="settings-desc">Muat ulang semua data terkini dari Google Sheets.</div>
+        <button class="btn-primary" onclick="loadFromSheets()">🔄 Reload dari Sheets</button>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">📋 Cara Setup</div>
+        <div class="settings-desc" style="background:var(--gray-light);padding:12px;border-radius:6px;font-size:11px;line-height:1.8">
+          <strong>1.</strong> Buka Google Sheets baru<br>
+          <strong>2.</strong> Menu <em>Extensions → Apps Script</em><br>
+          <strong>3.</strong> Paste kode dari file <code>google_apps_script_api.js</code><br>
+          <strong>4.</strong> <em>Deploy → New Deployment → Web App</em><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;Execute as: <strong>Me</strong> | Who has access: <strong>Anyone</strong><br>
+          <strong>5.</strong> Copy URL → paste di kolom di atas<br>
+          <strong>6.</strong> Jalankan fungsi <code>setupFormatting()</code> di editor<br>
+          <strong>7.</strong> Klik <em>Import Data</em> untuk migrasi data
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-settings')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Settings URL persistence via localStorage (hanya URL, bukan data)
+(function initSettingsUrl() {
+  const saved = localStorage.getItem('bangbis_api_url');
+  if (saved) {
+    document.getElementById('settings-url').value = saved;
+    // Inject ke variabel APPS_SCRIPT_URL
+    window._appsScriptUrl = saved;
+  }
+})();
+
+// Override APPS_SCRIPT_URL check dengan dynamic version
+const _origApiCall = apiCall;
+apiCall = async function(action, data) {
+  const dynamicUrl = window._appsScriptUrl || localStorage.getItem('bangbis_api_url') || APPS_SCRIPT_URL;
+  if (!dynamicUrl || dynamicUrl === 'PASTE_URL_DISINI') throw new Error('URL belum dikonfigurasi. Buka ⚙️ Pengaturan untuk setup.');
+  // Temporarily override global
+  const orig = APPS_SCRIPT_URL;
+  // Use dynamic url directly
+  const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','importData'].includes(action);
+  if (isWrite) {
+    const resp = await fetch(dynamicUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action, ...data })
+    });
+    return resp.json();
+  } else {
+    const params = new URLSearchParams({ action, ...(data || {}) });
+    const resp = await fetch(`${dynamicUrl}?${params}`);
+    return resp.json();
+  }
+};
+
+async function saveSettingsUrl() {
+  const url = document.getElementById('settings-url').value.trim();
+  if (!url || !url.startsWith('https://script.google.com')) {
+    alert('URL tidak valid. Harus diawali dengan https://script.google.com');
+    return;
+  }
+  localStorage.setItem('bangbis_api_url', url);
+  window._appsScriptUrl = url;
+  document.getElementById('conn-status').innerHTML = '<span class="status-dot dot-warn"></span> Sedang menguji koneksi…';
+  closeModal('modal-settings');
+  await loadFromSheets();
+  document.getElementById('conn-status').innerHTML = isConnected
+    ? '<span class="status-dot dot-ok"></span> Terhubung!'
+    : '<span class="status-dot dot-err"></span> Gagal terhubung — periksa URL & izin deploy';
+}
+
+// Auto-load jika ada saved URL
+const _savedUrl = localStorage.getItem('bangbis_api_url');
+if (_savedUrl) {
+  window._appsScriptUrl = _savedUrl;
+  document.getElementById('settings-url').value = _savedUrl;
+  loadFromSheets();
+}
+</script>
+
+</body>
+</html>
