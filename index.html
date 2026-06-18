@@ -1403,15 +1403,24 @@ function updateSyncBar() {
   const pushBtn = document.getElementById('btn-push-changes');
   if (!badge) return;
   if (!isConnected) {
-    badge.textContent = '⚠️ Belum terhubung';
+    badge.textContent = '⚠️ Offline — data lokal';
     badge.className = 'sync-badge sync-warn';
     if (pushBtn) pushBtn.style.display = 'none';
+    // Kalau ada URL tersimpan tapi belum connect, tampilkan badge berbeda
+    const savedUrl = window._appsScriptUrl || localStorage.getItem('bangbis_api_url');
+    if (savedUrl && hasUnsavedChanges && changelog.length > 0) {
+      badge.textContent = `⚠️ Offline · ${changelog.length} perubahan menunggu`;
+    }
     return;
   }
   if (hasUnsavedChanges && changelog.length > 0) {
     badge.textContent = `💾 ${changelog.length} perubahan belum tersimpan`;
     badge.className = 'sync-badge sync-pending';
-    if (pushBtn) { pushBtn.style.display = 'flex'; pushBtn.textContent = `⬆ Simpan ke Sheets (${changelog.length})`; }
+    if (pushBtn) {
+      pushBtn.style.display = 'flex';
+      pushBtn.textContent = `⬆ Simpan ke Sheets (${changelog.length})`;
+      pushBtn.disabled = false;
+    }
   } else {
     badge.textContent = `✅ Tersinkron · ${DATA.length} mitra`;
     badge.className = 'sync-badge sync-ok';
@@ -1425,7 +1434,9 @@ async function pushChangesToSheets() {
   if (changelog.length === 0) { showToast('✅ Tidak ada perubahan untuk disimpan.'); return; }
 
   const btn = document.getElementById('btn-push-changes');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Menyimpan…'; }
+  if (btn) { btn.disabled = true; btn.style.display = 'flex'; btn.textContent = `⏳ Menyimpan ${toProcess.length}…`; }
+  const badge = document.getElementById('sync-badge');
+  if (badge) { badge.textContent = `⏳ Menyimpan ${toProcess.length} perubahan…`; badge.className = 'sync-badge sync-loading'; }
 
   const toProcess = [...changelog];
   const errors = [];
@@ -1705,8 +1716,13 @@ if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'PASTE_URL_DISINI') {
   .sync-warn { background: #fff9c4; color: #b45309; border-color: #fcd34d; }
   .sync-err  { background: var(--red-light); color: var(--red); border-color: var(--red); }
   .sync-loading { background: var(--blue-light); color: var(--blue); border-color: var(--blue); }
+  .sync-pending { background: #fff3cd; color: #856404; border-color: #ffc107; animation: pulse-badge 1.8s ease-in-out infinite; }
+  @keyframes pulse-badge { 0%,100%{box-shadow:0 2px 8px rgba(0,0,0,0.1)} 50%{box-shadow:0 0 0 4px rgba(255,193,7,0.3)} }
   .btn-settings { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 11px; font-weight: 600; cursor: pointer; color: var(--muted); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
   .btn-settings:hover { background: var(--forest); color: white; }
+  .btn-push { background: var(--forest); color: white; border: none; border-radius: 20px; padding: 6px 16px; font-size: 11px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: none; align-items: center; gap: 6px; }
+  .btn-push:hover { background: var(--leaf); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+  .btn-push:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
   /* SETTINGS MODAL */
   .settings-section { margin-bottom: 18px; }
   .settings-title { font-size: 12px; font-weight: 700; color: var(--forest); margin-bottom: 8px; }
@@ -1721,6 +1737,7 @@ if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'PASTE_URL_DISINI') {
 
 <div class="sync-bar">
   <div class="sync-badge sync-warn" id="sync-badge">⚠️ Belum terhubung ke Sheets</div>
+  <button class="btn-push" id="btn-push-changes" onclick="pushChangesToSheets()">⬆ Simpan ke Sheets</button>
   <button class="btn-settings" onclick="openModal('modal-settings')">⚙️ Pengaturan</button>
 </div>
 
@@ -1756,6 +1773,12 @@ if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'PASTE_URL_DISINI') {
           <strong>Pastikan Sheets masih kosong</strong> sebelum import untuk menghindari duplikat.
         </div>
         <button class="btn-primary" onclick="importDataToSheets()">📤 Import Data ke Google Sheets</button>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">⬆ Simpan Perubahan ke Sheets</div>
+        <div class="settings-desc">Push semua perubahan lokal yang belum tersimpan ke Google Sheets.</div>
+        <button class="btn-primary" id="modal-push-btn" onclick="pushChangesToSheets();closeModal('modal-settings')">⬆ Simpan Perubahan ke Sheets</button>
       </div>
 
       <div class="settings-section">
