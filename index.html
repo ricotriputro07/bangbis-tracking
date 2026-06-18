@@ -64,6 +64,8 @@
   .list-panel { width: 400px; min-width: 300px; border-right: 1px solid var(--border); overflow-y: auto; background: white; }
   .category-header { padding: 7px 14px; background: var(--forest); color: white; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; }
   .cat-count { background: rgba(255,255,255,0.2); padding: 1px 7px; border-radius: 10px; font-size: 10px; }
+  .btn-add-in-cat { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 2px 9px; border-radius: 10px; font-size: 10px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+  .btn-add-in-cat:hover { background: var(--sage); color: var(--forest); border-color: var(--sage); }
   .item-card { padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; position: relative; }
   .item-card:hover { background: var(--gray-light); }
   .item-card.active { background: var(--green-light); border-left: 3px solid var(--leaf); }
@@ -521,10 +523,25 @@
       <input type="hidden" id="upload-idx" value="">
       <input type="hidden" id="upload-step" value="">
       <div style="font-size:12px;font-weight:700;color:var(--forest);margin-bottom:4px" id="upload-step-label"></div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px" id="upload-mitra-label"></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px" id="upload-mitra-label"></div>
+
+      <!-- PDF only notice -->
+      <div style="background:#e8f1f8;border:1px solid #457b9d;border-radius:7px;padding:10px 13px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
+        <span style="font-size:18px;line-height:1">📋</span>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#457b9d;margin-bottom:3px">Hanya File PDF</div>
+          <div style="font-size:11px;color:#1c2b22;line-height:1.55">
+            Upload dokumen pada tahapan kerja sama hanya menerima format <strong>PDF (.pdf)</strong>.<br>
+            Pastikan dokumen sudah dalam format PDF sebelum diupload.<br>
+            <span style="color:#6b8f71">Ukuran maksimal: 10 MB per file.</span>
+          </div>
+        </div>
+      </div>
+
       <div class="form-group" style="margin-bottom:12px">
-        <label class="form-label">Pilih File</label>
-        <input type="file" id="upload-file" class="form-input" multiple style="padding:6px">
+        <label class="form-label">Pilih File PDF</label>
+        <input type="file" id="upload-file" class="form-input" multiple accept=".pdf,application/pdf" style="padding:6px">
+        <div id="upload-file-error" style="display:none;color:var(--red);font-size:11px;margin-top:4px;font-weight:600"></div>
       </div>
       <div class="form-group" style="margin-bottom:12px">
         <label class="form-label">Keterangan (opsional)</label>
@@ -677,13 +694,27 @@ function applyFilters() {
 }
 
 // ==================== LIST BUILD ====================
+// Kategori tetap (urutan dan label pasti)
+const FIXED_CATEGORIES = [
+  'Jasa Lingkungan (Wisata)',
+  'Kawasan Tanaman Lainnya',
+  'MOU/NDA/LOI Telah Ditandatangani',
+  'PKS Telah Ditandatangani',
+  'Tidak Berlanjut/Batal/Berakhir'
+];
+
 function buildList() {
   const panel = document.getElementById('list-panel');
-  const categories = [...new Set(DATA.map(d => d.kategori))];
+  // Gabungkan kategori tetap + kategori dari data yang belum ada di list tetap
+  const extraCats = [...new Set(DATA.map(d => d.kategori))].filter(c => !FIXED_CATEGORIES.includes(c));
+  const categories = [...FIXED_CATEGORIES, ...extraCats];
   let html = '';
   categories.forEach(cat => {
     const items = DATA.filter(d => d.kategori === cat);
-    html += `<div class="category-header">${cat} <span class="cat-count">${items.length}</span></div>`;
+    html += `<div class="category-header">
+      <span>${cat} <span class="cat-count">${items.length}</span></span>
+      <button class="btn-add-in-cat" onclick="openAddMitraInCat('${cat.replace(/'/g,"\'")}')">＋ Tambah</button>
+    </div>`;
     items.forEach(d => {
       const idx = DATA.indexOf(d);
       const pct = Math.round((d.last_step / 13) * 100);
@@ -1030,19 +1061,28 @@ function populateYearSelect(selId, selectedYear) {
   sel.innerHTML = years.map(y => `<option value="${y}" ${y===selectedYear?'selected':''}>${y}</option>`).join('');
 }
 
-function openAddMitra() {
+function openAddMitra(presetKategori) {
   document.getElementById('modal-mitra-title').textContent = 'Tambah Mitra Baru';
   document.getElementById('edit-idx').value = '';
   document.getElementById('btn-delete-mitra').style.display = 'none';
   ['f-mitra','f-objek','f-pemroses','f-no-skk','f-no-pks'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-pic').value = '';
   document.getElementById('f-jenis').value = '';
-  document.getElementById('f-kategori').value = '';
+  document.getElementById('f-kategori').value = presetKategori || '';
   document.getElementById('f-status').value = 'In Progress';
   populateYearSelect('f-tahun', currentYear);
   populateStepSelect('Permohonan');
   populateStepChecks([]);
   openModal('modal-mitra');
+}
+
+function openAddMitraInCat(kategori) {
+  openAddMitra(kategori);
+  // Highlight kategori field sebentar
+  setTimeout(() => {
+    const el = document.getElementById('f-mitra');
+    if (el) el.focus();
+  }, 150);
 }
 
 function openEditMitra(idx) {
@@ -1069,31 +1109,51 @@ function saveMitra() {
   const idxVal = document.getElementById('edit-idx').value;
   const mitra = document.getElementById('f-mitra').value.trim();
   if (!mitra) { alert('Nama mitra tidak boleh kosong.'); return; }
+  const kategori = document.getElementById('f-kategori').value;
+  if (!kategori) { alert('Kategori harus dipilih.'); return; }
   const stepsDone = [...document.querySelectorAll('#steps-check-grid input:checked')].map(el => el.value);
   const currentStep = document.getElementById('f-current-step').value;
   const last_step = STEPS_ALL.indexOf(currentStep) !== -1 ? STEPS_ALL.indexOf(currentStep) : (currentStep === 'Selesai' ? 13 : 0);
   const tahun = parseInt(document.getElementById('f-tahun').value);
-  const obj = {
-    seq: 99, mitra,
-    objek: document.getElementById('f-objek').value.trim(),
-    pemroses: document.getElementById('f-pemroses').value.trim(),
-    pic: document.getElementById('f-pic').value,
-    jenis_ks: document.getElementById('f-jenis').value,
-    kategori: document.getElementById('f-kategori').value,
-    status: document.getElementById('f-status').value,
-    no_skk: document.getElementById('f-no-skk').value.trim(),
-    no_pks: document.getElementById('f-no-pks').value.trim(),
-    steps_done: stepsDone, last_step, current_step: currentStep,
-    tahun, monthly: {}, docs: {}
-  };
+
   if (idxVal === '') {
+    // INSERT: data baru
+    const obj = {
+      seq: 99, mitra,
+      objek: document.getElementById('f-objek').value.trim(),
+      pemroses: document.getElementById('f-pemroses').value.trim(),
+      pic: document.getElementById('f-pic').value,
+      jenis_ks: document.getElementById('f-jenis').value,
+      kategori,
+      status: document.getElementById('f-status').value,
+      no_skk: document.getElementById('f-no-skk').value.trim(),
+      no_pks: document.getElementById('f-no-pks').value.trim(),
+      steps_done: stepsDone, last_step, current_step: currentStep,
+      tahun, monthly: {}, docs: {}
+    };
     DATA.push(obj);
     showToast('✅ Mitra berhasil ditambahkan!');
+    manualYears.add(tahun);
   } else {
+    // UPDATE: pertahankan id, monthly, docs dari data lama
     const idx = parseInt(idxVal);
-    obj.monthly = DATA[idx].monthly || {};
-    obj.docs = DATA[idx].docs || {};
-    DATA[idx] = obj;
+    const existing = DATA[idx];
+    DATA[idx] = {
+      ...existing,                          // jaga id, monthly, docs, dll
+      mitra,
+      objek: document.getElementById('f-objek').value.trim(),
+      pemroses: document.getElementById('f-pemroses').value.trim(),
+      pic: document.getElementById('f-pic').value,
+      jenis_ks: document.getElementById('f-jenis').value,
+      kategori,
+      status: document.getElementById('f-status').value,
+      no_skk: document.getElementById('f-no-skk').value.trim(),
+      no_pks: document.getElementById('f-no-pks').value.trim(),
+      steps_done: stepsDone,                // update steps_done in-place
+      last_step,
+      current_step: currentStep,
+      tahun,
+    };
     showToast('✅ Data mitra berhasil diperbarui!');
     selectItem(idx);
   }
@@ -1122,17 +1182,10 @@ function deleteMonthReport(idx, bulan, tahun) {
   if (!confirm(`Hapus laporan ${bulanLabel} ${tahun} untuk "${d.mitra}"?\n\nTindakan ini tidak dapat dibatalkan.`)) return;
 
   if (d.monthly && d.monthly[tahun] && d.monthly[tahun][bulan]) {
-    // Simpan id laporan untuk sync ke Sheets sebelum dihapus
-    const reportId = d.monthly[tahun][bulan].id;
     delete d.monthly[tahun][bulan];
-    // Hapus object tahun jika sudah kosong
     if (Object.keys(d.monthly[tahun]).length === 0) delete d.monthly[tahun];
     renderDetail(d);
     showToast(`🗑 Laporan ${bulanLabel} ${tahun} dihapus.`);
-    // Sync hapus ke Sheets (set kosong)
-    if (isConnected && d.id) {
-      syncSaveMonthly(d.id, tahun, bulan, '', '');
-    }
   }
 }
 
@@ -1221,11 +1274,29 @@ function previewUploadFiles() {
   const files = document.getElementById('upload-file').files;
   const preview = document.getElementById('upload-preview');
   const list = document.getElementById('upload-preview-list');
+  const errEl = document.getElementById('upload-file-error');
+  errEl.style.display = 'none'; errEl.textContent = '';
+
   if (files.length === 0) { preview.style.display = 'none'; return; }
+
+  const nonPdf = [...files].filter(f => !f.name.toLowerCase().endsWith('.pdf') && f.type !== 'application/pdf');
+  if (nonPdf.length > 0) {
+    errEl.textContent = `❌ Bukan PDF: ${nonPdf.map(f=>f.name).join(', ')}`;
+    errEl.style.display = 'block';
+    preview.style.display = 'none';
+    return;
+  }
+
   preview.style.display = 'block';
-  list.innerHTML = [...files].map(f =>
-    `<div class="doc-item"><span>${getFileIcon(f.name)}</span><span class="doc-item-name">${f.name}</span><span class="doc-item-date">${(f.size/1024).toFixed(1)} KB</span></div>`
-  ).join('');
+  list.innerHTML = [...files].map(f => {
+    const kb = (f.size/1024).toFixed(1);
+    const tooBig = f.size > 10*1024*1024;
+    return `<div class="doc-item" style="${tooBig?'border:1px solid var(--red)':''}">
+      <span>📕</span>
+      <span class="doc-item-name">${f.name}</span>
+      <span class="doc-item-date" style="${tooBig?'color:var(--red)':''}">${kb} KB${tooBig?' ⚠️ >10MB':''}</span>
+    </div>`;
+  }).join('');
 }
 
 function saveUpload() {
@@ -1233,7 +1304,33 @@ function saveUpload() {
   const step = document.getElementById('upload-step').value;
   const desc = document.getElementById('upload-desc').value.trim();
   const files = document.getElementById('upload-file').files;
-  if (files.length === 0) { alert('Pilih file terlebih dahulu.'); return; }
+  const errEl = document.getElementById('upload-file-error');
+
+  // Reset error
+  errEl.style.display = 'none'; errEl.textContent = '';
+
+  if (files.length === 0) {
+    errEl.textContent = '⚠️ Pilih minimal satu file PDF terlebih dahulu.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Validasi semua file harus PDF
+  const nonPdf = [...files].filter(f => !f.name.toLowerCase().endsWith('.pdf') && f.type !== 'application/pdf');
+  if (nonPdf.length > 0) {
+    errEl.textContent = `❌ File berikut bukan PDF: ${nonPdf.map(f => f.name).join(', ')}. Hanya file PDF yang diizinkan.`;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Validasi ukuran maks 10MB per file
+  const tooBig = [...files].filter(f => f.size > 10 * 1024 * 1024);
+  if (tooBig.length > 0) {
+    errEl.textContent = `❌ File melebihi 10 MB: ${tooBig.map(f => f.name).join(', ')}.`;
+    errEl.style.display = 'block';
+    return;
+  }
+
   const d = DATA[idx];
   if (!d.docs) d.docs = {};
   if (!d.docs[step]) d.docs[step] = [];
@@ -1243,7 +1340,7 @@ function saveUpload() {
   });
   closeModal('modal-upload');
   renderDetail(d);
-  showToast(`📎 ${files.length} dokumen berhasil ditambahkan ke "${step}"`);
+  showToast(`📎 ${files.length} dokumen PDF berhasil ditambahkan ke "${step}"`);
 }
 
 function deleteDoc(idx, step, di) {
@@ -1269,49 +1366,167 @@ function showToast(msg) {
 
 // ==================== GOOGLE SHEETS API ====================
 // 🔧 GANTI URL INI DENGAN URL APPS SCRIPT ANDA SETELAH DEPLOY
-const APPS_SCRIPT_URL = 'PASTE_URL_DISINI';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzTd4jrpodsEwgDRHEAuSadr_FTOJAB9XOdPNqJPSJm_lFA4reb-GQdKVCSA1JFr-rKw/exec';
 
 let isConnected = false;
-let isSyncing = false;
+
+// ── CHANGELOG: antrian perubahan yang belum di-push ke Sheets ──
+// Format: { type: 'saveMitra'|'deleteMitra'|'saveMonthly'|'deleteMonthly'|'saveDokumen'|'deleteDokumen', payload: {...} }
+let changelog = [];
+let hasUnsavedChanges = false;
+
+function markChanged(type, payload) {
+  // Untuk deleteMitra: hapus semua changelog entry terkait mitra ini dulu
+  if (type === 'deleteMitra') {
+    changelog = changelog.filter(c => !(c.payload && c.payload.id === payload.id));
+    changelog = changelog.filter(c => !(c.payload && c.payload.mitra_id === payload.id));
+  }
+  // Untuk saveMitra update: replace entry lama jika sudah ada
+  if (type === 'saveMitra' && payload.id) {
+    changelog = changelog.filter(c => !(c.type === 'saveMitra' && c.payload.id === payload.id));
+  }
+  // Untuk saveMonthly: replace entry lama untuk kombinasi mitra+tahun+bulan
+  if (type === 'saveMonthly') {
+    changelog = changelog.filter(c => !(c.type === 'saveMonthly' && c.payload.mitra_id === payload.mitra_id && c.payload.tahun === payload.tahun && c.payload.bulan === payload.bulan));
+  }
+  // Untuk deleteMonthly: hapus saveMonthly yang relevan, tambah delete
+  if (type === 'deleteMonthly') {
+    changelog = changelog.filter(c => !(c.type === 'saveMonthly' && c.payload.mitra_id === payload.mitra_id && c.payload.tahun === payload.tahun && c.payload.bulan === payload.bulan));
+  }
+  changelog.push({ type, payload, ts: Date.now() });
+  hasUnsavedChanges = true;
+  updateSyncBar();
+}
+
+function updateSyncBar() {
+  const badge = document.getElementById('sync-badge');
+  const pushBtn = document.getElementById('btn-push-changes');
+  if (!badge) return;
+  if (!isConnected) {
+    badge.textContent = '⚠️ Belum terhubung';
+    badge.className = 'sync-badge sync-warn';
+    if (pushBtn) pushBtn.style.display = 'none';
+    return;
+  }
+  if (hasUnsavedChanges && changelog.length > 0) {
+    badge.textContent = `💾 ${changelog.length} perubahan belum tersimpan`;
+    badge.className = 'sync-badge sync-pending';
+    if (pushBtn) { pushBtn.style.display = 'flex'; pushBtn.textContent = `⬆ Simpan ke Sheets (${changelog.length})`; }
+  } else {
+    badge.textContent = `✅ Tersinkron · ${DATA.length} mitra`;
+    badge.className = 'sync-badge sync-ok';
+    if (pushBtn) pushBtn.style.display = 'none';
+  }
+}
+
+// ── PUSH: kirim semua changelog ke Sheets sekaligus ──────────
+async function pushChangesToSheets() {
+  if (!isConnected) { showToast('⚠️ Belum terhubung ke Sheets.'); return; }
+  if (changelog.length === 0) { showToast('✅ Tidak ada perubahan untuk disimpan.'); return; }
+
+  const btn = document.getElementById('btn-push-changes');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Menyimpan…'; }
+
+  const toProcess = [...changelog];
+  const errors = [];
+  let processed = 0;
+
+  for (const entry of toProcess) {
+    try {
+      let res;
+      if (entry.type === 'saveMitra') {
+        const payload = { ...entry.payload, steps_done: JSON.stringify(entry.payload.steps_done || []) };
+        res = await apiCall('saveMitra', { data: payload });
+        // Simpan id balik dari server untuk mitra baru
+        if (res.success && res.data && res.data.id && !entry.payload.id) {
+          const idx = DATA.findIndex(d => d._tempKey === entry.payload._tempKey);
+          if (idx !== -1) { DATA[idx].id = res.data.id; delete DATA[idx]._tempKey; }
+        }
+      } else if (entry.type === 'deleteMitra') {
+        res = await apiCall('deleteMitra', { data: { id: entry.payload.id } });
+      } else if (entry.type === 'saveMonthly') {
+        res = await apiCall('saveMonthly', { data: entry.payload });
+      } else if (entry.type === 'deleteMonthly') {
+        // Hapus dengan menyimpan kosong (server akan handle)
+        res = await apiCall('saveMonthly', { data: { ...entry.payload, progres: '', tindak_lanjut: '' } });
+      } else if (entry.type === 'saveDokumen') {
+        res = await apiCall('saveDokumen', { data: entry.payload });
+        if (res.success && res.data && res.data.id) {
+          // Simpan doc id ke data lokal
+          const d = DATA.find(m => m.id === entry.payload.mitra_id);
+          if (d && d.docs && d.docs[entry.payload.step]) {
+            const doc = d.docs[entry.payload.step].find(x => x._tempKey === entry.payload._tempKey);
+            if (doc) { doc.id = res.data.id; delete doc._tempKey; }
+          }
+        }
+      } else if (entry.type === 'deleteDokumen') {
+        if (entry.payload.id) res = await apiCall('deleteDokumen', { data: { id: entry.payload.id } });
+        else res = { success: true }; // doc belum pernah di-push, tidak perlu hapus di server
+      }
+
+      if (!res || !res.success) errors.push(`${entry.type}: ${res ? res.error : 'no response'}`);
+      else processed++;
+    } catch (err) {
+      errors.push(`${entry.type}: ${err.message}`);
+    }
+  }
+
+  // Hapus yang berhasil dari changelog
+  changelog = changelog.filter(c => !toProcess.includes(c));
+  hasUnsavedChanges = changelog.length > 0;
+
+  if (btn) { btn.disabled = false; }
+
+  if (errors.length === 0) {
+    showToast(`✅ ${processed} perubahan berhasil disimpan ke Sheets!`);
+    hasUnsavedChanges = false;
+    changelog = [];
+  } else {
+    showToast(`⚠️ ${processed} berhasil, ${errors.length} gagal. Cek konsol.`);
+    console.error('Push errors:', errors);
+  }
+  updateSyncBar();
+  buildList();
+}
 
 // ── API Helper ──────────────────────────────────────────────
 async function apiCall(action, data = {}) {
-  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'PASTE_URL_DISINI') {
-    throw new Error('URL Apps Script belum dikonfigurasi.');
-  }
+  const dynamicUrl = window._appsScriptUrl || localStorage.getItem('bangbis_api_url') || APPS_SCRIPT_URL;
+  if (!dynamicUrl || dynamicUrl === 'PASTE_URL_DISINI') throw new Error('URL belum dikonfigurasi. Buka ⚙️ Pengaturan.');
   const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','importData'].includes(action);
   if (isWrite) {
-    const resp = await fetch(APPS_SCRIPT_URL, {
+    const resp = await fetch(dynamicUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action, ...data })
     });
     return resp.json();
   } else {
-    const params = new URLSearchParams({ action, ...data });
-    const resp = await fetch(`${APPS_SCRIPT_URL}?${params}`);
+    const params = new URLSearchParams({ action, ...(data || {}) });
+    const resp = await fetch(`${dynamicUrl}?${params}`);
     return resp.json();
   }
 }
 
 // ── Load semua data dari Sheets ─────────────────────────────
 async function loadFromSheets() {
-  showSyncBadge('⏳ Memuat data…', 'loading');
+  if (hasUnsavedChanges && changelog.length > 0) {
+    if (!confirm(`Ada ${changelog.length} perubahan yang belum disimpan ke Sheets.\n\nLanjutkan reload? Perubahan lokal akan hilang.`)) return;
+  }
+  const badge = document.getElementById('sync-badge');
+  if (badge) { badge.textContent = '⏳ Memuat data…'; badge.className = 'sync-badge sync-loading'; }
   try {
     const res = await apiCall('getAll');
     if (!res.success) throw new Error(res.error);
     const raw = res.data.mitra;
-
     if (raw.length === 0) {
-      // Sheets terhubung tapi masih kosong — jangan overwrite data default
       isConnected = true;
-      showSyncBadge('✅ Terhubung · Sheets kosong', 'ok');
-      showImportBanner(); // tampilkan banner import
+      changelog = []; hasUnsavedChanges = false;
+      showImportBanner();
+      updateSyncBar();
       renderYearBtns(); updateStats(); buildList(); buildTable();
       return;
     }
-
-    // Sheets punya data — gunakan data dari Sheets
     DATA = raw.map(m => ({
       ...m,
       last_step: parseInt(m.last_step) || 0,
@@ -1319,14 +1534,37 @@ async function loadFromSheets() {
       steps_done: Array.isArray(m.steps_done) ? m.steps_done : [],
     }));
     isConnected = true;
+    changelog = []; hasUnsavedChanges = false;
     hideImportBanner();
-    showSyncBadge(`✅ Terhubung · ${DATA.length} mitra`, 'ok');
+    updateSyncBar();
     renderYearBtns(); updateStats(); buildList(); buildTable();
     if (currentItem !== null && DATA[currentItem]) renderDetail(DATA[currentItem]);
+    showToast(`🔄 Data terbaru dimuat: ${DATA.length} mitra`);
   } catch (err) {
     isConnected = false;
-    showSyncBadge('⚠️ Offline — data lokal', 'warn');
+    if (badge) { badge.textContent = '⚠️ Offline — data lokal'; badge.className = 'sync-badge sync-warn'; }
     console.warn('Gagal load dari Sheets:', err);
+  }
+}
+
+// ── Import bulk data ke Sheets ───────────────────────────────
+async function importDataToSheets() {
+  if (DATA.length === 0) { showToast('⚠️ Tidak ada data untuk diimport.'); return; }
+  if (!confirm(`Import ${DATA.length} mitra ke Google Sheets?\n\nPastikan Sheets masih kosong untuk menghindari duplikat.`)) return;
+  const badge = document.getElementById('sync-badge');
+  if (badge) { badge.textContent = `⏳ Mengimpor ${DATA.length} mitra…`; badge.className = 'sync-badge sync-loading'; }
+  try {
+    const res = await apiCall('importData', { data: { mitra: DATA } });
+    if (!res.success) throw new Error(res.error);
+    const r = res.data.imported;
+    showToast(`✅ Import selesai: ${r.mitra} mitra, ${r.monthly} laporan, ${r.docs} dokumen`);
+    hideImportBanner();
+    changelog = []; hasUnsavedChanges = false;
+    await loadFromSheets();
+  } catch (err) {
+    if (badge) { badge.textContent = '❌ Gagal import'; badge.className = 'sync-badge sync-err'; }
+    showToast('❌ Import gagal: ' + err.message);
+    console.error(err);
   }
 }
 
@@ -1335,185 +1573,116 @@ function showImportBanner() {
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'import-banner';
-    banner.style.cssText = `
-      position:fixed; top:0; left:0; right:0; z-index:800;
-      background:#1a3a2a; color:white; padding:10px 20px;
-      display:flex; align-items:center; justify-content:center; gap:14px;
-      font-size:12px; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.3);
-    `;
-    banner.innerHTML = `
-      <span>✅ Terhubung ke Google Sheets. Sheets masih kosong — </span>
-      <button onclick="importDataToSheets()" style="
-        background:#52b788; color:#1a3a2a; border:none; padding:6px 16px;
-        border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;
-      ">📤 Import Data Sekarang</button>
-      <button onclick="hideImportBanner()" style="
-        background:transparent; color:rgba(255,255,255,0.6); border:none;
-        font-size:16px; cursor:pointer; padding:0 4px;
-      ">✕</button>
-    `;
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:800;background:#1a3a2a;color:white;padding:10px 20px;display:flex;align-items:center;justify-content:center;gap:14px;font-size:12px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+    banner.innerHTML = `<span>✅ Terhubung ke Google Sheets. Sheets masih kosong — </span>
+      <button onclick="importDataToSheets()" style="background:#52b788;color:#1a3a2a;border:none;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">📤 Import Data Sekarang</button>
+      <button onclick="hideImportBanner()" style="background:transparent;color:rgba(255,255,255,0.6);border:none;font-size:16px;cursor:pointer;padding:0 4px;">✕</button>`;
     document.body.prepend(banner);
   }
   banner.style.display = 'flex';
 }
-
 function hideImportBanner() {
-  const banner = document.getElementById('import-banner');
-  if (banner) banner.style.display = 'none';
+  const b = document.getElementById('import-banner');
+  if (b) b.style.display = 'none';
 }
 
-// ── Sync saveMitra ──────────────────────────────────────────
-async function syncSaveMitra(mitraObj) {
-  if (!isConnected) return;
-  showSyncBadge('💾 Menyimpan…', 'loading');
-  try {
-    const payload = { ...mitraObj, steps_done: JSON.stringify(mitraObj.steps_done) };
-    const res = await apiCall('saveMitra', { data: payload });
-    if (!res.success) throw new Error(res.error);
-    // Jika insert baru, simpan id yang digenerate server
-    if (!mitraObj.id && res.data && res.data.id) {
-      const idx = DATA.findIndex(d => d.mitra === mitraObj.mitra && !d.id);
-      if (idx !== -1) DATA[idx].id = res.data.id;
-    }
-    showSyncBadge('✅ Tersimpan', 'ok');
-  } catch (err) {
-    showSyncBadge('❌ Gagal simpan', 'err');
-    console.error('syncSaveMitra error:', err);
-  }
-}
-
-// ── Sync deleteMitra ────────────────────────────────────────
-async function syncDeleteMitra(id) {
-  if (!isConnected || !id) return;
-  try {
-    await apiCall('deleteMitra', { data: { id } });
-  } catch (err) { console.error('syncDeleteMitra error:', err); }
-}
-
-// ── Sync saveMonthly ────────────────────────────────────────
-async function syncSaveMonthly(mitraId, tahun, bulan, progres, tl) {
-  if (!isConnected || !mitraId) return;
-  showSyncBadge('💾 Menyimpan laporan…', 'loading');
-  try {
-    const res = await apiCall('saveMonthly', { data: { mitra_id: mitraId, tahun, bulan, progres, tindak_lanjut: tl } });
-    if (!res.success) throw new Error(res.error);
-    showSyncBadge('✅ Laporan tersimpan', 'ok');
-  } catch (err) {
-    showSyncBadge('❌ Gagal simpan laporan', 'err');
-    console.error('syncSaveMonthly error:', err);
-  }
-}
-
-// ── Sync saveDokumen ────────────────────────────────────────
-async function syncSaveDokumen(mitraId, step, nama_file, deskripsi, ukuran_kb) {
-  if (!isConnected || !mitraId) return;
-  try {
-    const res = await apiCall('saveDokumen', { data: { mitra_id: mitraId, step, nama_file, deskripsi, ukuran_kb } });
-    if (!res.success) throw new Error(res.error);
-    // Simpan doc id dari server
-    return res.data && res.data.id;
-  } catch (err) {
-    console.error('syncSaveDokumen error:', err);
-  }
-}
-
-// ── Sync deleteDokumen ──────────────────────────────────────
-async function syncDeleteDokumen(docId) {
-  if (!isConnected || !docId) return;
-  try {
-    await apiCall('deleteDokumen', { data: { id: docId } });
-  } catch (err) { console.error('syncDeleteDokumen error:', err); }
-}
-
-// ── Import data lokal ke Sheets ─────────────────────────────
-async function importDataToSheets() {
-  if (DATA.length === 0) {
-    showToast('⚠️ Tidak ada data untuk diimport.');
-    return;
-  }
-  if (!confirm(`Import ${DATA.length} mitra ke Google Sheets?\n\nPastikan Sheets masih kosong untuk menghindari duplikat.`)) return;
-  showSyncBadge('⏳ Mengimpor ' + DATA.length + ' mitra…', 'loading');
-  try {
-    const res = await apiCall('importData', { data: { mitra: DATA } });
-    if (!res.success) throw new Error(res.error);
-    const r = res.data.imported;
-    showToast(`✅ Import selesai: ${r.mitra} mitra, ${r.monthly} laporan, ${r.docs} dokumen`);
-    showSyncBadge('✅ Import selesai', 'ok');
-    hideImportBanner();
-    await loadFromSheets(); // reload dari server untuk dapat id yang benar
-  } catch (err) {
-    showSyncBadge('❌ Gagal import', 'err');
-    showToast('❌ Import gagal: ' + err.message);
-    console.error(err);
-  }
-}
-
-// ── Sync badge UI ───────────────────────────────────────────
-function showSyncBadge(msg, state) {
-  const badge = document.getElementById('sync-badge');
-  if (!badge) return;
-  badge.textContent = msg;
-  badge.className = 'sync-badge sync-' + state;
-  if (state === 'ok') setTimeout(() => { badge.textContent = isConnected ? '✅ Terhubung ke Sheets' : '⚠️ Offline'; badge.className = 'sync-badge sync-ok'; }, 3000);
-}
-
-// ── PATCH: override saveMitra untuk juga sync ke Sheets ─────
+// ── PATCH: saveMitra ────────────────────────────────────────
 const _origSaveMitra = saveMitra;
 saveMitra = function() {
-  _origSaveMitra();
-  // Sync mitra terbaru (yang baru disimpan)
   const idxVal = document.getElementById('edit-idx').value;
-  const targetIdx = idxVal !== '' ? parseInt(idxVal) : DATA.length - 1;
-  if (DATA[targetIdx]) syncSaveMitra(DATA[targetIdx]);
+  const isNew = idxVal === '';
+  _origSaveMitra();
+  const targetIdx = isNew ? DATA.length - 1 : parseInt(idxVal);
+  if (DATA[targetIdx]) {
+    if (isNew) DATA[targetIdx]._tempKey = 'new_' + Date.now();
+    markChanged('saveMitra', { ...DATA[targetIdx] });
+  }
 };
 
-// ── PATCH: override deleteMitra ─────────────────────────────
+// ── PATCH: deleteMitra ──────────────────────────────────────
 const _origDeleteMitra = deleteMitra;
 deleteMitra = function() {
   const idx = parseInt(document.getElementById('edit-idx').value);
-  const id = DATA[idx] && DATA[idx].id;
+  const mitraId = DATA[idx] && DATA[idx].id;
+  const mitraName = DATA[idx] && DATA[idx].mitra;
   _origDeleteMitra();
-  if (id) syncDeleteMitra(id);
+  if (mitraId) markChanged('deleteMitra', { id: mitraId, mitra: mitraName });
 };
 
-// ── PATCH: override saveReport ───────────────────────────────
+// ── PATCH: saveReport ───────────────────────────────────────
 const _origSaveReport = saveReport;
 saveReport = function() {
   _origSaveReport();
   const idx = parseInt(document.getElementById('report-idx').value);
   const d = DATA[idx];
-  if (d && d.id) {
-    const progres = document.getElementById('report-progres') ? document.getElementById('report-progres').value : '';
-    const tl = document.getElementById('report-tl') ? document.getElementById('report-tl').value : '';
-    syncSaveMonthly(d.id, reportActiveYear, reportActiveMonth, progres, tl);
+  if (d) {
+    const progres = (document.getElementById('report-progres') || {}).value || '';
+    const tl = (document.getElementById('report-tl') || {}).value || '';
+    markChanged('saveMonthly', {
+      mitra_id: d.id || null,
+      mitra_nama: d.mitra,
+      tahun: reportActiveYear,
+      bulan: reportActiveMonth,
+      progres,
+      tindak_lanjut: tl
+    });
   }
 };
 
-// ── PATCH: override saveUpload ───────────────────────────────
+// ── PATCH: deleteMonthReport ────────────────────────────────
+const _origDeleteMonthReport = deleteMonthReport;
+deleteMonthReport = function(idx, bulan, tahun) {
+  const d = DATA[idx];
+  const mitraId = d && d.id;
+  _origDeleteMonthReport(idx, bulan, tahun);
+  if (mitraId) {
+    markChanged('deleteMonthly', { mitra_id: mitraId, tahun, bulan });
+  } else if (d) {
+    markChanged('deleteMonthly', { mitra_id: null, mitra_nama: d.mitra, tahun, bulan });
+  }
+};
+
+// ── PATCH: saveUpload ───────────────────────────────────────
 const _origSaveUpload = saveUpload;
 saveUpload = function() {
   const idx = parseInt(document.getElementById('upload-idx').value);
   const step = document.getElementById('upload-step').value;
   const d = DATA[idx];
   _origSaveUpload();
-  // Sync setiap file
   if (d && d.docs && d.docs[step]) {
     const files = d.docs[step];
     const latest = files[files.length - 1];
-    if (latest && d.id) {
-      syncSaveDokumen(d.id, step, latest.name, latest.desc || '', Math.round((latest.size||0)/1024)).then(docId => {
-        if (docId) latest.id = docId;
+    if (latest) {
+      latest._tempKey = 'doc_' + Date.now();
+      markChanged('saveDokumen', {
+        mitra_id: d.id || null,
+        mitra_nama: d.mitra,
+        step,
+        nama_file: latest.name,
+        deskripsi: latest.desc || '',
+        ukuran_kb: Math.round((latest.size || 0) / 1024),
+        _tempKey: latest._tempKey
       });
     }
   }
 };
 
-// ── PATCH: override deleteDoc ────────────────────────────────
+// ── PATCH: deleteDoc ────────────────────────────────────────
 const _origDeleteDoc = deleteDoc;
 deleteDoc = function(idx, step, di) {
-  const docId = DATA[idx] && DATA[idx].docs && DATA[idx].docs[step] && DATA[idx].docs[step][di] && DATA[idx].docs[step][di].id;
+  const d = DATA[idx];
+  const doc = d && d.docs && d.docs[step] && d.docs[step][di];
+  const docId = doc && doc.id;
+  const tempKey = doc && doc._tempKey;
   _origDeleteDoc(idx, step, di);
-  if (docId) syncDeleteDokumen(docId);
+  // Hapus entry saveDokumen dari changelog jika belum di-push
+  if (tempKey) {
+    changelog = changelog.filter(c => !(c.type === 'saveDokumen' && c.payload._tempKey === tempKey));
+    hasUnsavedChanges = changelog.length > 0;
+    updateSyncBar();
+  } else if (docId) {
+    markChanged('deleteDokumen', { id: docId });
+  }
 };
 
 // ==================== INIT ====================
