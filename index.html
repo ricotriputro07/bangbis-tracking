@@ -1396,6 +1396,35 @@ function markChanged(type, payload) {
   changelog.push({ type, payload, ts: Date.now() });
   hasUnsavedChanges = true;
   updateSyncBar();
+  // 🔄 AUTO-SYNC: setiap perubahan langsung dijadwalkan untuk push ke Sheets
+  scheduleAutoSync();
+}
+
+// ── AUTO-SYNC: debounce push ke Sheets setelah setiap perubahan ──
+let _autoSyncTimer = null;
+let _isAutoSyncing = false;
+const AUTO_SYNC_DELAY_MS = 600; // tunggu 600ms agar perubahan beruntun di-batch
+
+function scheduleAutoSync() {
+  if (!isConnected) return; // kalau belum konek, biar tetap antri di changelog
+  if (_autoSyncTimer) clearTimeout(_autoSyncTimer);
+  _autoSyncTimer = setTimeout(runAutoSync, AUTO_SYNC_DELAY_MS);
+}
+
+async function runAutoSync() {
+  _autoSyncTimer = null;
+  if (_isAutoSyncing) { scheduleAutoSync(); return; } // lagi sync → jadwalkan ulang
+  if (!isConnected || changelog.length === 0) return;
+  _isAutoSyncing = true;
+  try {
+    await pushChangesToSheets({ silent: true });
+  } catch (err) {
+    console.error('Auto-sync error:', err);
+  } finally {
+    _isAutoSyncing = false;
+    // Kalau selama proses ada perubahan baru, jadwalkan lagi
+    if (changelog.length > 0) scheduleAutoSync();
+  }
 }
 
 function updateSyncBar() {
@@ -1414,13 +1443,11 @@ function updateSyncBar() {
     return;
   }
   if (hasUnsavedChanges && changelog.length > 0) {
-    badge.textContent = `💾 ${changelog.length} perubahan belum tersimpan`;
-    badge.className = 'sync-badge sync-pending';
-    if (pushBtn) {
-      pushBtn.style.display = 'flex';
-      pushBtn.textContent = `⬆ Simpan ke Sheets (${changelog.length})`;
-      pushBtn.disabled = false;
-    }
+    // Auto-sync sedang antri / berjalan
+    badge.textContent = `🔄 Auto-sync · ${changelog.length} perubahan…`;
+    badge.className = 'sync-badge sync-loading';
+    // Sembunyikan tombol manual (auto-sync menangani semuanya)
+    if (pushBtn) pushBtn.style.display = 'none';
   } else {
     badge.textContent = `✅ Tersinkron · ${DATA.length} mitra`;
     badge.className = 'sync-badge sync-ok';
@@ -1429,16 +1456,17 @@ function updateSyncBar() {
 }
 
 // ── PUSH: kirim semua changelog ke Sheets sekaligus ──────────
-async function pushChangesToSheets() {
-  if (!isConnected) { showToast('⚠️ Belum terhubung ke Sheets.'); return; }
-  if (changelog.length === 0) { showToast('✅ Tidak ada perubahan untuk disimpan.'); return; }
+async function pushChangesToSheets(opts = {}) {
+  const silent = !!opts.silent;
+  if (!isConnected) { if (!silent) showToast('⚠️ Belum terhubung ke Sheets.'); return; }
+  if (changelog.length === 0) { if (!silent) showToast('✅ Tidak ada perubahan untuk disimpan.'); return; }
 
+  const toProcess = [...changelog];
   const btn = document.getElementById('btn-push-changes');
   if (btn) { btn.disabled = true; btn.style.display = 'flex'; btn.textContent = `⏳ Menyimpan ${toProcess.length}…`; }
   const badge = document.getElementById('sync-badge');
   if (badge) { badge.textContent = `⏳ Menyimpan ${toProcess.length} perubahan…`; badge.className = 'sync-badge sync-loading'; }
 
-  const toProcess = [...changelog];
   const errors = [];
   let processed = 0;
 
@@ -1489,7 +1517,7 @@ async function pushChangesToSheets() {
   if (btn) { btn.disabled = false; }
 
   if (errors.length === 0) {
-    showToast(`✅ ${processed} perubahan berhasil disimpan ke Sheets!`);
+    if (!silent) showToast(`✅ ${processed} perubahan berhasil disimpan ke Sheets!`);
     hasUnsavedChanges = false;
     changelog = [];
   } else {
@@ -1550,8 +1578,7 @@ async function loadFromSheets() {
     updateSyncBar();
     renderYearBtns(); updateStats(); buildList(); buildTable();
     if (currentItem !== null && DATA[currentItem]) renderDetail(DATA[currentItem]);
-    showToast(`🔄 Data terbaru dimuat: ${DATA.length} mitra`);
-  } catch (err) {
+    showToast(`🔄 Data terbaru dimuat: ${DATA.length} mitra`);  } catch (err) {
     isConnected = false;
     if (badge) { badge.textContent = '⚠️ Offline — data lokal'; badge.className = 'sync-badge sync-warn'; }
     console.warn('Gagal load dari Sheets:', err);
@@ -1867,5 +1894,6 @@ if (_savedUrl) {
 }
 </script>
 
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7f7b0fd8732c4326aae4b9d58d5c514a","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
