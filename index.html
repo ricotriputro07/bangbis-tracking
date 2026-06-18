@@ -134,6 +134,11 @@
   .month-text { font-size: 11px; color: var(--ink); line-height: 1.55; white-space: pre-wrap; }
   .month-text.tl { background: #fffbf0; border-left: 3px solid var(--amber); padding: 5px 8px; border-radius: 0 4px 4px 0; }
   .month-empty { color: var(--gray); font-size: 11px; font-style: italic; }
+  .month-action-btn { background: rgba(255,255,255,0.15); border: none; border-radius: 4px; cursor: pointer; font-size: 12px; padding: 2px 5px; line-height: 1; transition: background 0.15s; }
+  .month-action-btn:hover { background: rgba(255,255,255,0.35); }
+  .month-del-btn:hover { background: rgba(230,57,70,0.6); }
+  .btn-add-month-inline { background: none; border: 1px dashed var(--border); border-radius: 4px; color: var(--muted); font-size: 10px; padding: 3px 8px; cursor: pointer; margin-top: 4px; }
+  .btn-add-month-inline:hover { background: var(--green-light); color: var(--leaf); border-color: var(--sage); }
 
   /* DOCUMENT UPLOAD */
   .doc-section { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
@@ -576,13 +581,17 @@ let reportActiveMonth = 'jan';
 let reportActiveYear = 2026;
 
 // ==================== YEAR MANAGEMENT ====================
+// Simpan tahun yang ditambahkan user agar tidak hilang saat data di-reload
+const manualYears = new Set([2026]);
+
 function getAvailableYears() {
-  const years = new Set(DATA.map(d => d.tahun || 2026));
-  Object.keys(years); // collect from monthly too
-  DATA.forEach(d => { if (d.monthly) Object.keys(d.monthly).forEach(y => years.add(parseInt(y))); });
-  const sorted = [...years].sort();
-  if (!sorted.includes(currentYear)) sorted.push(currentYear);
-  return sorted.sort();
+  const years = new Set([...manualYears]);
+  DATA.forEach(d => {
+    if (d.tahun) years.add(parseInt(d.tahun));
+    if (d.monthly) Object.keys(d.monthly).forEach(y => years.add(parseInt(y)));
+  });
+  years.add(currentYear); // selalu sertakan tahun aktif
+  return [...years].sort((a,b) => a - b);
 }
 
 function renderYearBtns() {
@@ -591,22 +600,24 @@ function renderYearBtns() {
   wrap.innerHTML = years.map(y =>
     `<button class="year-btn ${y===currentYear?'active':''}" onclick="setYear(${y})">${y}</button>`
   ).join('') +
-  `<button class="year-btn" onclick="addYear()" style="background:rgba(255,255,255,0.1);border-style:dashed">＋</button>`;
+  `<button class="year-btn" onclick="addYear()" style="background:rgba(255,255,255,0.1);border-style:dashed">＋ Tahun</button>`;
 }
 
 function setYear(y) {
   currentYear = y;
+  manualYears.add(y); // pertahankan tab tahun ini
   renderYearBtns();
   updateStats();
   buildList();
   buildTable();
-  if (currentItem !== null) renderDetail(DATA[currentItem]);
+  if (currentItem !== null && DATA[currentItem]) renderDetail(DATA[currentItem]);
 }
 
 function addYear() {
   const y = prompt('Masukkan tahun yang ingin ditambahkan:', new Date().getFullYear() + 1);
   if (y && !isNaN(y)) {
     const yr = parseInt(y);
+    manualYears.add(yr);
     setYear(yr);
   }
 }
@@ -765,12 +776,17 @@ function renderDetail(d) {
     return `<div class="month-card ${isLatest ? 'full' : ''}">
       <div class="month-header ${hasContent ? '' : 'empty'}">
         <span>${MONTH_NAMES[mi]} ${currentYear}${isLatest ? ' — Terkini' : ''}</span>
-        ${hasContent ? '<span>✓</span>' : '<span style="opacity:0.5">–</span>'}
+        <div style="display:flex;align-items:center;gap:6px">
+          ${hasContent ? `
+            <button class="month-action-btn" onclick="openEditReport(${idx},'${key}',${currentYear})" title="Edit laporan">✏️</button>
+            <button class="month-action-btn month-del-btn" onclick="deleteMonthReport(${idx},'${key}',${currentYear})" title="Hapus laporan">🗑</button>
+          ` : '<span style="opacity:0.5">–</span>'}
+        </div>
       </div>
       <div class="month-body">
         ${progres ? `<div class="month-section"><div class="month-label">📋 Progres</div><div class="month-text">${progres}</div></div>` : ''}
         ${tl ? `<div class="month-section"><div class="month-label">⤷ Tindak Lanjut</div><div class="month-text tl">${tl}</div></div>` : ''}
-        ${!hasContent ? `<div class="month-empty">Tidak ada catatan bulan ini</div>` : ''}
+        ${!hasContent ? `<div class="month-empty">Tidak ada catatan bulan ini<br><button class="btn-add-month-inline" onclick="openEditReport(${idx},'${key}',${currentYear})">＋ Tambah</button></div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -1098,6 +1114,39 @@ function deleteMitra() {
 
 // ==================== MODAL: REPORT BULANAN ====================
 function updateMonthOptions() {}
+
+// ── Hapus laporan satu bulan ──────────────────────────────
+function deleteMonthReport(idx, bulan, tahun) {
+  const d = DATA[idx];
+  const bulanLabel = MONTH_NAMES[MONTH_KEYS.indexOf(bulan)];
+  if (!confirm(`Hapus laporan ${bulanLabel} ${tahun} untuk "${d.mitra}"?\n\nTindakan ini tidak dapat dibatalkan.`)) return;
+
+  if (d.monthly && d.monthly[tahun] && d.monthly[tahun][bulan]) {
+    // Simpan id laporan untuk sync ke Sheets sebelum dihapus
+    const reportId = d.monthly[tahun][bulan].id;
+    delete d.monthly[tahun][bulan];
+    // Hapus object tahun jika sudah kosong
+    if (Object.keys(d.monthly[tahun]).length === 0) delete d.monthly[tahun];
+    renderDetail(d);
+    showToast(`🗑 Laporan ${bulanLabel} ${tahun} dihapus.`);
+    // Sync hapus ke Sheets (set kosong)
+    if (isConnected && d.id) {
+      syncSaveMonthly(d.id, tahun, bulan, '', '');
+    }
+  }
+}
+
+// ── Edit laporan bulan tertentu (buka modal dengan bulan sudah terpilih) ──
+function openEditReport(idx, bulan, tahun) {
+  document.getElementById('report-idx').value = idx;
+  document.getElementById('report-mitra-name').textContent = DATA[idx].mitra;
+  populateYearSelect('report-year-sel', tahun);
+  reportActiveYear = tahun;
+  reportActiveMonth = bulan;
+  renderReportMonthTabs();
+  loadReportFields();
+  openModal('modal-report');
+}
 
 function openAddReport(idx) {
   document.getElementById('report-idx').value = idx;
