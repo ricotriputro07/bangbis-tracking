@@ -1370,162 +1370,81 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzTd4jrpodsEwg
 
 let isConnected = false;
 
-// ── CHANGELOG: antrian perubahan yang belum di-push ke Sheets ──
-// Format: { type: 'saveMitra'|'deleteMitra'|'saveMonthly'|'deleteMonthly'|'saveDokumen'|'deleteDokumen', payload: {...} }
-let changelog = [];
-let hasUnsavedChanges = false;
+// ── AUTO-SYNC: setiap perubahan langsung dikirim ke Sheets ──
+// Antrian untuk menghindari race condition jika banyak aksi bersamaan
+let syncQueue = Promise.resolve();
 
-function markChanged(type, payload) {
-  // Untuk deleteMitra: hapus semua changelog entry terkait mitra ini dulu
-  if (type === 'deleteMitra') {
-    changelog = changelog.filter(c => !(c.payload && c.payload.id === payload.id));
-    changelog = changelog.filter(c => !(c.payload && c.payload.mitra_id === payload.id));
-  }
-  // Untuk saveMitra update: replace entry lama jika sudah ada
-  if (type === 'saveMitra' && payload.id) {
-    changelog = changelog.filter(c => !(c.type === 'saveMitra' && c.payload.id === payload.id));
-  }
-  // Untuk saveMonthly: replace entry lama untuk kombinasi mitra+tahun+bulan
-  if (type === 'saveMonthly') {
-    changelog = changelog.filter(c => !(c.type === 'saveMonthly' && c.payload.mitra_id === payload.mitra_id && c.payload.tahun === payload.tahun && c.payload.bulan === payload.bulan));
-  }
-  // Untuk deleteMonthly: hapus saveMonthly yang relevan, tambah delete
-  if (type === 'deleteMonthly') {
-    changelog = changelog.filter(c => !(c.type === 'saveMonthly' && c.payload.mitra_id === payload.mitra_id && c.payload.tahun === payload.tahun && c.payload.bulan === payload.bulan));
-  }
-  changelog.push({ type, payload, ts: Date.now() });
-  hasUnsavedChanges = true;
-  updateSyncBar();
-  // 🔄 AUTO-SYNC: setiap perubahan langsung dijadwalkan untuk push ke Sheets
-  scheduleAutoSync();
-}
-
-// ── AUTO-SYNC: debounce push ke Sheets setelah setiap perubahan ──
-let _autoSyncTimer = null;
-let _isAutoSyncing = false;
-const AUTO_SYNC_DELAY_MS = 600; // tunggu 600ms agar perubahan beruntun di-batch
-
-function scheduleAutoSync() {
-  if (!isConnected) return; // kalau belum konek, biar tetap antri di changelog
-  if (_autoSyncTimer) clearTimeout(_autoSyncTimer);
-  _autoSyncTimer = setTimeout(runAutoSync, AUTO_SYNC_DELAY_MS);
-}
-
-async function runAutoSync() {
-  _autoSyncTimer = null;
-  if (_isAutoSyncing) { scheduleAutoSync(); return; } // lagi sync → jadwalkan ulang
-  if (!isConnected || changelog.length === 0) return;
-  _isAutoSyncing = true;
-  try {
-    await pushChangesToSheets({ silent: true });
-  } catch (err) {
-    console.error('Auto-sync error:', err);
-  } finally {
-    _isAutoSyncing = false;
-    // Kalau selama proses ada perubahan baru, jadwalkan lagi
-    if (changelog.length > 0) scheduleAutoSync();
-  }
-}
-
-function updateSyncBar() {
+function setSyncBadge(state, msg) {
   const badge = document.getElementById('sync-badge');
   const pushBtn = document.getElementById('btn-push-changes');
   if (!badge) return;
+  badge.textContent = msg;
+  badge.className = 'sync-badge sync-' + state;
+  if (pushBtn) pushBtn.style.display = 'none'; // tidak diperlukan di auto-sync
+}
+
+// Fungsi utama: antrekan satu operasi sync dan jalankan
+function autoSync(type, payload) {
   if (!isConnected) {
-    badge.textContent = '⚠️ Offline — data lokal';
-    badge.className = 'sync-badge sync-warn';
-    if (pushBtn) pushBtn.style.display = 'none';
-    // Kalau ada URL tersimpan tapi belum connect, tampilkan badge berbeda
-    const savedUrl = window._appsScriptUrl || localStorage.getItem('bangbis_api_url');
-    if (savedUrl && hasUnsavedChanges && changelog.length > 0) {
-      badge.textContent = `⚠️ Offline · ${changelog.length} perubahan menunggu`;
-    }
+    setSyncBadge('warn', '⚠️ Offline — data lokal');
     return;
   }
-  if (hasUnsavedChanges && changelog.length > 0) {
-    // Auto-sync sedang antri / berjalan
-    badge.textContent = `🔄 Auto-sync · ${changelog.length} perubahan…`;
-    badge.className = 'sync-badge sync-loading';
-    // Sembunyikan tombol manual (auto-sync menangani semuanya)
-    if (pushBtn) pushBtn.style.display = 'none';
-  } else {
-    badge.textContent = `✅ Tersinkron · ${DATA.length} mitra`;
-    badge.className = 'sync-badge sync-ok';
-    if (pushBtn) pushBtn.style.display = 'none';
+  setSyncBadge('loading', '💾 Menyimpan…');
+  syncQueue = syncQueue.then(() => _execSync(type, payload)).catch(() => {});
+}
+
+async function _execSync(type, payload) {
+  try {
+    let res;
+    if (type === 'saveMitra') {
+      const p = { ...payload, steps_done: JSON.stringify(payload.steps_done || []) };
+      res = await apiCall('saveMitra', { data: p });
+      // Simpan id server untuk mitra baru (INSERT)
+      if (res && res.success && res.data && res.data.id && !payload.id) {
+        const idx = DATA.findIndex(d => d._tempKey === payload._tempKey);
+        if (idx !== -1) { DATA[idx].id = res.data.id; delete DATA[idx]._tempKey; }
+      }
+    } else if (type === 'deleteMitra') {
+      if (!payload.id) return; // belum punya id server, tidak perlu hapus
+      res = await apiCall('deleteMitra', { data: { id: payload.id } });
+    } else if (type === 'saveMonthly') {
+      res = await apiCall('saveMonthly', { data: payload });
+    } else if (type === 'deleteMonthly') {
+      res = await apiCall('saveMonthly', { data: { ...payload, progres: '', tindak_lanjut: '' } });
+    } else if (type === 'saveDokumen') {
+      res = await apiCall('saveDokumen', { data: payload });
+      if (res && res.success && res.data && res.data.id) {
+        const d = DATA.find(m => m.id === payload.mitra_id);
+        if (d && d.docs && d.docs[payload.step]) {
+          const doc = d.docs[payload.step].find(x => x._tempKey === payload._tempKey);
+          if (doc) { doc.id = res.data.id; delete doc._tempKey; }
+        }
+      }
+    } else if (type === 'deleteDokumen') {
+      if (!payload.id) return;
+      res = await apiCall('deleteDokumen', { data: { id: payload.id } });
+    }
+
+    if (res && res.success) {
+      setSyncBadge('ok', `✅ Tersimpan · ${DATA.length} mitra`);
+      setTimeout(() => setSyncBadge('ok', `✅ Tersinkron · ${DATA.length} mitra`), 2000);
+    } else {
+      const errMsg = res ? res.error : 'Tidak ada respons';
+      setSyncBadge('err', `❌ Gagal: ${errMsg}`);
+      showToast(`❌ Gagal sync (${type}): ${errMsg}`);
+      console.error('autoSync error:', type, errMsg);
+    }
+  } catch (err) {
+    setSyncBadge('err', '❌ Gagal terhubung');
+    showToast(`❌ Koneksi gagal: ${err.message}`);
+    console.error('autoSync exception:', err);
   }
 }
 
-// ── PUSH: kirim semua changelog ke Sheets sekaligus ──────────
-async function pushChangesToSheets(opts = {}) {
-  const silent = !!opts.silent;
-  if (!isConnected) { if (!silent) showToast('⚠️ Belum terhubung ke Sheets.'); return; }
-  if (changelog.length === 0) { if (!silent) showToast('✅ Tidak ada perubahan untuk disimpan.'); return; }
-
-  const toProcess = [...changelog];
-  const btn = document.getElementById('btn-push-changes');
-  if (btn) { btn.disabled = true; btn.style.display = 'flex'; btn.textContent = `⏳ Menyimpan ${toProcess.length}…`; }
-  const badge = document.getElementById('sync-badge');
-  if (badge) { badge.textContent = `⏳ Menyimpan ${toProcess.length} perubahan…`; badge.className = 'sync-badge sync-loading'; }
-
-  const errors = [];
-  let processed = 0;
-
-  for (const entry of toProcess) {
-    try {
-      let res;
-      if (entry.type === 'saveMitra') {
-        const payload = { ...entry.payload, steps_done: JSON.stringify(entry.payload.steps_done || []) };
-        res = await apiCall('saveMitra', { data: payload });
-        // Simpan id balik dari server untuk mitra baru
-        if (res.success && res.data && res.data.id && !entry.payload.id) {
-          const idx = DATA.findIndex(d => d._tempKey === entry.payload._tempKey);
-          if (idx !== -1) { DATA[idx].id = res.data.id; delete DATA[idx]._tempKey; }
-        }
-      } else if (entry.type === 'deleteMitra') {
-        res = await apiCall('deleteMitra', { data: { id: entry.payload.id } });
-      } else if (entry.type === 'saveMonthly') {
-        res = await apiCall('saveMonthly', { data: entry.payload });
-      } else if (entry.type === 'deleteMonthly') {
-        // Hapus dengan menyimpan kosong (server akan handle)
-        res = await apiCall('saveMonthly', { data: { ...entry.payload, progres: '', tindak_lanjut: '' } });
-      } else if (entry.type === 'saveDokumen') {
-        res = await apiCall('saveDokumen', { data: entry.payload });
-        if (res.success && res.data && res.data.id) {
-          // Simpan doc id ke data lokal
-          const d = DATA.find(m => m.id === entry.payload.mitra_id);
-          if (d && d.docs && d.docs[entry.payload.step]) {
-            const doc = d.docs[entry.payload.step].find(x => x._tempKey === entry.payload._tempKey);
-            if (doc) { doc.id = res.data.id; delete doc._tempKey; }
-          }
-        }
-      } else if (entry.type === 'deleteDokumen') {
-        if (entry.payload.id) res = await apiCall('deleteDokumen', { data: { id: entry.payload.id } });
-        else res = { success: true }; // doc belum pernah di-push, tidak perlu hapus di server
-      }
-
-      if (!res || !res.success) errors.push(`${entry.type}: ${res ? res.error : 'no response'}`);
-      else processed++;
-    } catch (err) {
-      errors.push(`${entry.type}: ${err.message}`);
-    }
-  }
-
-  // Hapus yang berhasil dari changelog
-  changelog = changelog.filter(c => !toProcess.includes(c));
-  hasUnsavedChanges = changelog.length > 0;
-
-  if (btn) { btn.disabled = false; }
-
-  if (errors.length === 0) {
-    if (!silent) showToast(`✅ ${processed} perubahan berhasil disimpan ke Sheets!`);
-    hasUnsavedChanges = false;
-    changelog = [];
-  } else {
-    showToast(`⚠️ ${processed} berhasil, ${errors.length} gagal. Cek konsol.`);
-    console.error('Push errors:', errors);
-  }
-  updateSyncBar();
-  buildList();
+// Tetap sediakan fungsi ini agar modal settings tidak error
+function pushChangesToSheets() {
+  setSyncBadge('ok', `✅ Tersinkron · ${DATA.length} mitra`);
+  showToast('✅ Data sudah otomatis tersinkron ke Sheets.');
 }
 
 // ── API Helper ──────────────────────────────────────────────
@@ -1549,9 +1468,6 @@ async function apiCall(action, data = {}) {
 
 // ── Load semua data dari Sheets ─────────────────────────────
 async function loadFromSheets() {
-  if (hasUnsavedChanges && changelog.length > 0) {
-    if (!confirm(`Ada ${changelog.length} perubahan yang belum disimpan ke Sheets.\n\nLanjutkan reload? Perubahan lokal akan hilang.`)) return;
-  }
   const badge = document.getElementById('sync-badge');
   if (badge) { badge.textContent = '⏳ Memuat data…'; badge.className = 'sync-badge sync-loading'; }
   try {
@@ -1560,9 +1476,8 @@ async function loadFromSheets() {
     const raw = res.data.mitra;
     if (raw.length === 0) {
       isConnected = true;
-      changelog = []; hasUnsavedChanges = false;
       showImportBanner();
-      updateSyncBar();
+      setSyncBadge('ok', '✅ Terhubung · Sheets kosong');
       renderYearBtns(); updateStats(); buildList(); buildTable();
       return;
     }
@@ -1573,12 +1488,12 @@ async function loadFromSheets() {
       steps_done: Array.isArray(m.steps_done) ? m.steps_done : [],
     }));
     isConnected = true;
-    changelog = []; hasUnsavedChanges = false;
     hideImportBanner();
-    updateSyncBar();
+    setSyncBadge('ok', `✅ Tersinkron · ${DATA.length} mitra`);
     renderYearBtns(); updateStats(); buildList(); buildTable();
     if (currentItem !== null && DATA[currentItem]) renderDetail(DATA[currentItem]);
-    showToast(`🔄 Data terbaru dimuat: ${DATA.length} mitra`);  } catch (err) {
+    showToast(`🔄 Data terbaru dimuat: ${DATA.length} mitra`);
+  } catch (err) {
     isConnected = false;
     if (badge) { badge.textContent = '⚠️ Offline — data lokal'; badge.className = 'sync-badge sync-warn'; }
     console.warn('Gagal load dari Sheets:', err);
@@ -1597,7 +1512,6 @@ async function importDataToSheets() {
     const r = res.data.imported;
     showToast(`✅ Import selesai: ${r.mitra} mitra, ${r.monthly} laporan, ${r.docs} dokumen`);
     hideImportBanner();
-    changelog = []; hasUnsavedChanges = false;
     await loadFromSheets();
   } catch (err) {
     if (badge) { badge.textContent = '❌ Gagal import'; badge.className = 'sync-badge sync-err'; }
@@ -1624,7 +1538,7 @@ function hideImportBanner() {
   if (b) b.style.display = 'none';
 }
 
-// ── PATCH: saveMitra ────────────────────────────────────────
+// ── PATCH: saveMitra → auto-sync langsung ke Sheets ──────────
 const _origSaveMitra = saveMitra;
 saveMitra = function() {
   const idxVal = document.getElementById('edit-idx').value;
@@ -1633,21 +1547,21 @@ saveMitra = function() {
   const targetIdx = isNew ? DATA.length - 1 : parseInt(idxVal);
   if (DATA[targetIdx]) {
     if (isNew) DATA[targetIdx]._tempKey = 'new_' + Date.now();
-    markChanged('saveMitra', { ...DATA[targetIdx] });
+    autoSync('saveMitra', { ...DATA[targetIdx] });
   }
 };
 
-// ── PATCH: deleteMitra ──────────────────────────────────────
+// ── PATCH: deleteMitra → auto-sync langsung ke Sheets ────────
 const _origDeleteMitra = deleteMitra;
 deleteMitra = function() {
   const idx = parseInt(document.getElementById('edit-idx').value);
   const mitraId = DATA[idx] && DATA[idx].id;
   const mitraName = DATA[idx] && DATA[idx].mitra;
   _origDeleteMitra();
-  if (mitraId) markChanged('deleteMitra', { id: mitraId, mitra: mitraName });
+  if (mitraId) autoSync('deleteMitra', { id: mitraId, mitra: mitraName });
 };
 
-// ── PATCH: saveReport ───────────────────────────────────────
+// ── PATCH: saveReport → auto-sync langsung ke Sheets ──────────
 const _origSaveReport = saveReport;
 saveReport = function() {
   _origSaveReport();
@@ -1656,7 +1570,7 @@ saveReport = function() {
   if (d) {
     const progres = (document.getElementById('report-progres') || {}).value || '';
     const tl = (document.getElementById('report-tl') || {}).value || '';
-    markChanged('saveMonthly', {
+    autoSync('saveMonthly', {
       mitra_id: d.id || null,
       mitra_nama: d.mitra,
       tahun: reportActiveYear,
@@ -1667,20 +1581,18 @@ saveReport = function() {
   }
 };
 
-// ── PATCH: deleteMonthReport ────────────────────────────────
+// ── PATCH: deleteMonthReport → auto-sync langsung ke Sheets ──
 const _origDeleteMonthReport = deleteMonthReport;
 deleteMonthReport = function(idx, bulan, tahun) {
   const d = DATA[idx];
   const mitraId = d && d.id;
   _origDeleteMonthReport(idx, bulan, tahun);
   if (mitraId) {
-    markChanged('deleteMonthly', { mitra_id: mitraId, tahun, bulan });
-  } else if (d) {
-    markChanged('deleteMonthly', { mitra_id: null, mitra_nama: d.mitra, tahun, bulan });
+    autoSync('deleteMonthly', { mitra_id: mitraId, tahun, bulan });
   }
 };
 
-// ── PATCH: saveUpload ───────────────────────────────────────
+// ── PATCH: saveUpload → auto-sync langsung ke Sheets ──────────
 const _origSaveUpload = saveUpload;
 saveUpload = function() {
   const idx = parseInt(document.getElementById('upload-idx').value);
@@ -1692,7 +1604,7 @@ saveUpload = function() {
     const latest = files[files.length - 1];
     if (latest) {
       latest._tempKey = 'doc_' + Date.now();
-      markChanged('saveDokumen', {
+      autoSync('saveDokumen', {
         mitra_id: d.id || null,
         mitra_nama: d.mitra,
         step,
@@ -1705,22 +1617,14 @@ saveUpload = function() {
   }
 };
 
-// ── PATCH: deleteDoc ────────────────────────────────────────
+// ── PATCH: deleteDoc → auto-sync langsung ke Sheets ───────────
 const _origDeleteDoc = deleteDoc;
 deleteDoc = function(idx, step, di) {
   const d = DATA[idx];
   const doc = d && d.docs && d.docs[step] && d.docs[step][di];
   const docId = doc && doc.id;
-  const tempKey = doc && doc._tempKey;
   _origDeleteDoc(idx, step, di);
-  // Hapus entry saveDokumen dari changelog jika belum di-push
-  if (tempKey) {
-    changelog = changelog.filter(c => !(c.type === 'saveDokumen' && c.payload._tempKey === tempKey));
-    hasUnsavedChanges = changelog.length > 0;
-    updateSyncBar();
-  } else if (docId) {
-    markChanged('deleteDokumen', { id: docId });
-  }
+  if (docId) autoSync('deleteDokumen', { id: docId });
 };
 
 // ==================== INIT ====================
@@ -1764,7 +1668,6 @@ if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'PASTE_URL_DISINI') {
 
 <div class="sync-bar">
   <div class="sync-badge sync-warn" id="sync-badge">⚠️ Belum terhubung ke Sheets</div>
-  <button class="btn-push" id="btn-push-changes" onclick="pushChangesToSheets()">⬆ Simpan ke Sheets</button>
   <button class="btn-settings" onclick="openModal('modal-settings')">⚙️ Pengaturan</button>
 </div>
 
@@ -1803,9 +1706,10 @@ if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'PASTE_URL_DISINI') {
       </div>
 
       <div class="settings-section">
-        <div class="settings-title">⬆ Simpan Perubahan ke Sheets</div>
-        <div class="settings-desc">Push semua perubahan lokal yang belum tersimpan ke Google Sheets.</div>
-        <button class="btn-primary" id="modal-push-btn" onclick="pushChangesToSheets();closeModal('modal-settings')">⬆ Simpan Perubahan ke Sheets</button>
+        <div class="settings-title">⚡ Sinkronisasi Otomatis</div>
+        <div class="settings-desc" style="background:var(--green-light);padding:10px 12px;border-radius:6px;color:var(--leaf);font-weight:600">
+          ✅ Setiap perubahan (tambah/edit/hapus mitra, laporan bulanan, dokumen) langsung tersimpan otomatis ke Google Sheets. Tidak perlu klik simpan manual.
+        </div>
       </div>
 
       <div class="settings-section">
@@ -1894,6 +1798,5 @@ if (_savedUrl) {
 }
 </script>
 
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7f7b0fd8732c4326aae4b9d58d5c514a","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
