@@ -17,6 +17,78 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: var(--paper); color: var(--ink); font-size: 13px; line-height: 1.5; }
 
+  /* ── LOGIN SCREEN ── */
+  #login-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(135deg, #0d2318 0%, #1a3a2a 50%, #0d2318 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', sans-serif;
+  }
+  #login-screen.hidden { display: none; }
+  .login-card {
+    background: white; border-radius: 16px; padding: 40px 36px;
+    width: 380px; max-width: 94vw;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+    animation: loginSlideIn 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+  @keyframes loginSlideIn {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+  .login-logo-icon { width: 48px; height: 48px; background: var(--forest); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .login-logo-text h2 { font-size: 15px; font-weight: 800; color: var(--forest); line-height: 1.2; }
+  .login-logo-text p  { font-size: 11px; color: var(--muted); }
+  .login-divider { height: 1px; background: var(--border); margin-bottom: 24px; }
+  .login-field { margin-bottom: 16px; }
+  .login-field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .login-input {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 13px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s;
+    background: var(--paper);
+  }
+  .login-input:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgba(82,183,136,0.15); }
+  .login-input.error { border-color: var(--red); box-shadow: 0 0 0 3px rgba(230,57,70,0.12); }
+  .login-error { font-size: 11px; color: var(--red); font-weight: 600; margin-top: 6px; display: none; padding: 7px 10px; background: var(--red-light); border-radius: 6px; }
+  .login-error.show { display: block; }
+  .login-btn {
+    width: 100%; padding: 11px; background: var(--forest); color: white; border: none;
+    border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: 'Inter', sans-serif; margin-top: 8px; transition: background 0.15s, transform 0.1s;
+  }
+  .login-btn:hover { background: var(--leaf); }
+  .login-btn:active { transform: scale(0.98); }
+  .login-btn:disabled { background: var(--muted); cursor: not-allowed; }
+  .login-footer { margin-top: 20px; font-size: 10px; color: var(--muted); text-align: center; line-height: 1.6; }
+  .login-caps-warn { font-size: 10px; color: var(--amber-dark); font-weight: 600; margin-top: 4px; display: none; }
+  .login-caps-warn.show { display: block; }
+
+  /* ── SESSION EXPIRED OVERLAY ── */
+  #session-expired {
+    position: fixed; inset: 0; z-index: 9998;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #session-expired.hidden { display: none; }
+  .session-card {
+    background: white; border-radius: 14px; padding: 32px 28px;
+    width: 360px; max-width: 94vw; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    animation: loginSlideIn 0.3s ease;
+  }
+  .session-icon { font-size: 42px; margin-bottom: 12px; }
+  .session-title { font-size: 16px; font-weight: 800; color: var(--forest); margin-bottom: 8px; }
+  .session-desc { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+  .session-countdown { font-size: 11px; color: var(--amber-dark); font-weight: 700; margin-bottom: 16px; }
+
+  /* ── USER BADGE di header ── */
+  .user-badge { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.12); border-radius: 20px; padding: 5px 12px 5px 6px; }
+  .user-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--sage); color: var(--forest); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+  .user-name { font-size: 11px; font-weight: 600; color: white; }
+  .user-logout { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 11px; cursor: pointer; padding: 0; margin-left: 4px; }
+  .user-logout:hover { color: white; }
+  .session-timer { font-size: 10px; color: var(--mint); margin-top: 1px; }
+
   /* HEADER */
   .header { background: var(--forest); color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--sage); }
   .header-left { display: flex; align-items: center; gap: 14px; }
@@ -144,18 +216,34 @@
 
   /* DOCUMENT UPLOAD */
   .doc-section { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
-  .doc-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .doc-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
   .doc-step-group { margin-bottom: 10px; }
   .doc-step-name { font-size: 11px; font-weight: 600; color: var(--forest); margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; }
   .doc-list { display: flex; flex-direction: column; gap: 4px; }
-  .doc-item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: var(--gray-light); border-radius: 5px; font-size: 11px; }
-  .doc-item-icon { font-size: 14px; }
-  .doc-item-name { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .doc-item-date { font-size: 10px; color: var(--muted); white-space: nowrap; }
-  .doc-item-del { background: none; border: none; cursor: pointer; color: var(--red); font-size: 14px; padding: 0 2px; }
+  .doc-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--gray-light); border-radius: 6px; font-size: 11px; border: 1px solid transparent; transition: border-color 0.15s; }
+  .doc-item:hover { border-color: var(--border); background: white; }
+  .doc-item-icon { font-size: 16px; flex-shrink: 0; }
+  .doc-item-info { flex: 1; min-width: 0; }
+  .doc-item-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+  .doc-item-meta { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .doc-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .doc-btn { border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; padding: 3px 8px; display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+  .doc-btn-view { background: var(--blue-light); color: var(--blue); }
+  .doc-btn-view:hover { background: var(--blue); color: white; }
+  .doc-btn-download { background: var(--green-light); color: var(--leaf); }
+  .doc-btn-download:hover { background: var(--leaf); color: white; }
+  .doc-btn-del { background: var(--red-light); color: var(--red); }
+  .doc-btn-del:hover { background: var(--red); color: white; }
+  .doc-uploading { opacity: 0.6; }
+  .doc-upload-progress { font-size: 10px; color: var(--blue); font-style: italic; }
   .btn-upload-doc { background: var(--blue-light); color: var(--blue); border: 1px dashed var(--blue); border-radius: 5px; padding: 4px 10px; font-size: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
   .btn-upload-doc:hover { background: var(--blue); color: white; }
   .no-docs { font-size: 10px; color: var(--muted); font-style: italic; }
+  .btn-drive-folder { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; border-radius: 12px; padding: 3px 10px; font-size: 10px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-drive-folder:hover { background: #e65100; color: white; }
+  /* Modal viewer PDF */
+  .modal-pdf { width: 90vw; max-width: 900px; height: 90vh; }
+  .pdf-viewer-frame { width: 100%; height: calc(90vh - 120px); border: none; border-radius: 6px; background: #525659; }
 
   /* META GRID */
   .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: white; border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-bottom: 14px; }
@@ -253,8 +341,55 @@
 </head>
 <body>
 
+<!-- ══════════ LOGIN SCREEN ══════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🌳</div>
+      <div class="login-logo-text">
+        <h2>Tracking Kerja Sama</h2>
+        <p>Divisi Bangbis · Perum Perhutani</p>
+      </div>
+    </div>
+    <div class="login-divider"></div>
+    <div class="login-field">
+      <label for="login-username">Username</label>
+      <input type="text" id="login-username" class="login-input" placeholder="Masukkan username" autocomplete="username" spellcheck="false">
+    </div>
+    <div class="login-field">
+      <label for="login-password">Password</label>
+      <div style="position:relative">
+        <input type="password" id="login-password" class="login-input" placeholder="Masukkan password" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')doLogin()">
+        <button onclick="togglePwd()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--muted)" id="pwd-eye">👁</button>
+      </div>
+      <div class="login-caps-warn" id="caps-warn">⚠️ Caps Lock aktif</div>
+    </div>
+    <div class="login-error" id="login-error">Username atau password salah.</div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Masuk →</button>
+    <div class="login-footer">
+      Sistem ini hanya untuk penggunaan internal<br>Divisi Pengembangan Bisnis · Perum Perhutani<br>
+      <span style="color:var(--border)">Session otomatis berakhir setelah 1 jam tidak aktif</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SESSION EXPIRED ══════════ -->
+<div id="session-expired" class="hidden">
+  <div class="session-card">
+    <div class="session-icon">⏱</div>
+    <div class="session-title">Sesi Berakhir</div>
+    <div class="session-desc">
+      Anda tidak aktif selama lebih dari <strong>1 jam</strong>.<br>
+      Silakan login kembali untuk melanjutkan.
+    </div>
+    <div class="session-countdown" id="session-countdown"></div>
+    <button class="login-btn" style="width:auto;padding:10px 28px;display:inline-block" onclick="showLoginFromExpired()">🔐 Login Kembali</button>
+  </div>
+</div>
+
 <!-- HEADER -->
-<div class="header">
+<div class="header" id="main-header">
   <div class="header-left">
     <div class="logo-mark">🌳</div>
     <div>
@@ -263,6 +398,14 @@
     </div>
   </div>
   <div class="header-right">
+    <div class="user-badge" id="user-badge" style="display:none">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <div>
+        <div class="user-name" id="user-name-display">—</div>
+        <div class="session-timer" id="session-timer-display">—</div>
+      </div>
+      <button class="user-logout" onclick="doLogout()" title="Keluar">✕</button>
+    </div>
     <button class="btn-add-mitra" onclick="openAddMitra()">＋ Tambah Mitra</button>
     <div class="header-meta">
       <strong id="total-count">0</strong>
@@ -560,6 +703,279 @@
 </div>
 
 <script>
+// ==================== AUTH & SESSION ====================
+
+// ── Daftar user (username: password hash sederhana) ──────────
+// Password disimpan sebagai SHA-256 hash untuk keamanan dasar
+// Untuk generate hash baru: jalankan hashPassword('passwordBaru') di console
+// Daftar users default:
+//   admin    / Bangbis@2024
+//   mm       / MM@perhutani
+//   abm      / ABM@perhutani
+//   dr       / DR@perhutani
+//   iv       / IV@perhutani
+//   va       / VA@perhutani
+const USERS = {
+  'admin': { hash: '66a4dcb7e6212e0707c93960f61d792c', name: 'Administrator', role: 'admin', pic: 'ADM' },
+  'mm':    { hash: 'ad10c431e07106190c5fb9d0ce121bfb', name: 'MM',             role: 'user',  pic: 'MM'  },
+  'abm':   { hash: '772eba0dca5d30d867c4ef9798f835c0', name: 'ABM',            role: 'user',  pic: 'ABM' },
+  'dr':    { hash: '4d5fce0b9570c5a33af227e7d8b50cbc', name: 'DR',             role: 'user',  pic: 'DR'  },
+  'iv':    { hash: '4e1bb585b6fc94f53fca7773861a6a9a', name: 'IV',             role: 'user',  pic: 'IV'  },
+  'va':    { hash: '2de7f940bdc866ecb1e2cde92a7b8ec7', name: 'VA',             role: 'user',  pic: 'VA'  },
+};
+
+const SESSION_DURATION_MS = 60 * 60 * 1000; // 1 jam = 3.600.000 ms
+const SESSION_KEY  = 'bangbis_session';
+const ACTIVITY_KEY = 'bangbis_last_activity';
+
+let sessionCheckInterval = null;
+let sessionTimerInterval = null;
+let currentUser = null;
+
+// ── Hash password sederhana (MD5-like, cukup untuk proteksi dasar) ─
+async function hashPassword(pwd) {
+  const msgBuffer = new TextEncoder().encode(pwd);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2,'0')).join('').substring(0, 32);
+}
+
+// ── Cek session saat halaman dibuka ──────────────────────────
+function checkExistingSession() {
+  const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+  const lastActivity = parseInt(localStorage.getItem(ACTIVITY_KEY) || '0');
+  const now = Date.now();
+
+  if (!session || !session.username) {
+    showLoginScreen();
+    return false;
+  }
+
+  // Cek apakah lebih dari 1 jam tidak aktif
+  if (now - lastActivity > SESSION_DURATION_MS) {
+    clearSession();
+    showLoginScreen();
+    return false;
+  }
+
+  // Session valid — restore user
+  const user = USERS[session.username];
+  if (!user) {
+    clearSession();
+    showLoginScreen();
+    return false;
+  }
+
+  currentUser = { username: session.username, ...user };
+  hideLoginScreen();
+  startSessionMonitor();
+  updateActivityTime();
+  return true;
+}
+
+// ── Do Login ────────────────────────────────────────────────
+async function doLogin() {
+  const usernameEl = document.getElementById('login-username');
+  const passwordEl = document.getElementById('login-password');
+  const errorEl    = document.getElementById('login-error');
+  const btnEl      = document.getElementById('login-btn');
+
+  const username = usernameEl.value.trim().toLowerCase();
+  const password = passwordEl.value;
+
+  errorEl.classList.remove('show');
+  usernameEl.classList.remove('error');
+  passwordEl.classList.remove('error');
+
+  if (!username || !password) {
+    errorEl.textContent = 'Username dan password harus diisi.';
+    errorEl.classList.add('show');
+    if (!username) usernameEl.classList.add('error');
+    if (!password) passwordEl.classList.add('error');
+    return;
+  }
+
+  btnEl.disabled = true;
+  btnEl.textContent = '⏳ Memverifikasi…';
+
+  const user = USERS[username];
+  if (!user) {
+    loginFailed(usernameEl, passwordEl, errorEl, btnEl, 'Username tidak ditemukan.');
+    return;
+  }
+
+  const inputHash = await hashPassword(password);
+  if (inputHash !== user.hash) {
+    loginFailed(usernameEl, passwordEl, errorEl, btnEl, 'Password salah.');
+    return;
+  }
+
+  // ✅ Login berhasil
+  currentUser = { username, ...user };
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ username, loginAt: Date.now() }));
+  updateActivityTime();
+  hideLoginScreen();
+  startSessionMonitor();
+
+  // Jika dari session expired, jangan reload data
+  document.getElementById('session-expired').classList.add('hidden');
+}
+
+function loginFailed(userEl, pwdEl, errEl, btn, msg) {
+  errEl.textContent = msg;
+  errEl.classList.add('show');
+  userEl.classList.add('error');
+  pwdEl.classList.add('error');
+  // Guncang kartu
+  const card = document.querySelector('.login-card');
+  card.style.animation = 'none';
+  card.offsetHeight; // reflow
+  card.style.animation = 'shake 0.4s ease';
+  btn.disabled = false;
+  btn.textContent = 'Masuk →';
+  setTimeout(() => { userEl.classList.remove('error'); pwdEl.classList.remove('error'); }, 1500);
+}
+
+function showLoginScreen() {
+  document.getElementById('login-screen').classList.remove('hidden');
+  setTimeout(() => { const u = document.getElementById('login-username'); if(u) u.focus(); }, 100);
+}
+
+function hideLoginScreen() {
+  document.getElementById('login-screen').classList.add('hidden');
+  // Tampilkan user badge
+  const badge = document.getElementById('user-badge');
+  const avatar = document.getElementById('user-avatar');
+  const nameEl = document.getElementById('user-name-display');
+  if (badge && currentUser) {
+    badge.style.display = 'flex';
+    avatar.textContent = currentUser.pic || currentUser.username.substring(0,3).toUpperCase();
+    nameEl.textContent = currentUser.name || currentUser.username;
+  }
+  // Init app setelah login (render + load sheets)
+  renderYearBtns();
+  updateStats();
+  buildList();
+  buildTable();
+  const savedUrl = window._appsScriptUrl || localStorage.getItem('bangbis_api_url');
+  if (savedUrl) loadFromSheets();
+}
+
+function showLoginFromExpired() {
+  document.getElementById('session-expired').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-password').value = '';
+  const u = document.getElementById('login-username');
+  if (u && currentUser) u.value = currentUser.username;
+  setTimeout(() => { document.getElementById('login-password').focus(); }, 100);
+}
+
+function doLogout() {
+  if (!confirm('Keluar dari aplikasi?')) return;
+  clearSession();
+  location.reload();
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(ACTIVITY_KEY);
+  currentUser = null;
+  if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+  if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+}
+
+function updateActivityTime() {
+  localStorage.setItem(ACTIVITY_KEY, Date.now().toString());
+}
+
+// ── Monitor session ──────────────────────────────────────────
+function startSessionMonitor() {
+  // Cek setiap 30 detik
+  if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+  sessionCheckInterval = setInterval(checkSessionExpiry, 30 * 1000);
+
+  // Update timer display setiap detik
+  if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+  sessionTimerInterval = setInterval(updateSessionTimerDisplay, 1000);
+
+  // Reset timer saat ada aktivitas user
+  ['click','mousemove','keydown','scroll','touchstart'].forEach(evt => {
+    document.addEventListener(evt, updateActivityTime, { passive: true });
+  });
+}
+
+function checkSessionExpiry() {
+  const lastActivity = parseInt(localStorage.getItem(ACTIVITY_KEY) || '0');
+  const remaining = SESSION_DURATION_MS - (Date.now() - lastActivity);
+  if (remaining <= 0) {
+    // Session expired
+    clearInterval(sessionCheckInterval);
+    clearInterval(sessionTimerInterval);
+    document.getElementById('session-expired').classList.remove('hidden');
+    document.getElementById('user-badge').style.display = 'none';
+  }
+}
+
+function updateSessionTimerDisplay() {
+  const lastActivity = parseInt(localStorage.getItem(ACTIVITY_KEY) || '0');
+  const remaining = SESSION_DURATION_MS - (Date.now() - lastActivity);
+  if (remaining <= 0) return;
+
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  const timerEl = document.getElementById('session-timer-display');
+  if (timerEl) {
+    if (mins < 5) {
+      timerEl.textContent = `⚠️ ${mins}m ${secs}s tersisa`;
+      timerEl.style.color = '#e9c46a';
+    } else {
+      timerEl.textContent = `⏱ ${mins}m tersisa`;
+      timerEl.style.color = 'var(--mint)';
+    }
+  }
+}
+
+// ── Caps Lock warning ─────────────────────────────────────────
+document.addEventListener('keyup', function(e) {
+  const capsWarn = document.getElementById('caps-warn');
+  if (!capsWarn) return;
+  if (e.getModifierState && e.getModifierState('CapsLock')) {
+    capsWarn.classList.add('show');
+  } else {
+    capsWarn.classList.remove('show');
+  }
+});
+
+// ── Toggle password visibility ────────────────────────────────
+function togglePwd() {
+  const inp = document.getElementById('login-password');
+  const eye = document.getElementById('pwd-eye');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    eye.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    eye.textContent = '👁';
+  }
+}
+
+// ── Shake animation CSS ───────────────────────────────────────
+const shakeStyle = document.createElement('style');
+shakeStyle.textContent = `@keyframes shake {
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)}
+}`;
+document.head.appendChild(shakeStyle);
+
+// ══════════════════════════════════════════════════════════════
+// HELPER: generate hash untuk menambah user baru
+// Jalankan di browser console: generateUserHash('passwordBaru').then(console.log)
+// ══════════════════════════════════════════════════════════════
+async function generateUserHash(pwd) {
+  const h = await hashPassword(pwd);
+  console.log('Hash untuk password "' + pwd + '":', h);
+  return h;
+}
+
 // ==================== DATA ====================
 let DATA = [
   {"seq":1,"mitra":"PT Taman Safari Indonesia (TSI Prigen)","objek":"","pemroses":"Divre Jatim","jenis_ks":"Perpanjangan PKS","pic":"MM","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":["Permohonan","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Telah dilaksanakan monev oleh Divre Jatim, KPH Pasuruan dan PT TSI tanggal 4 Desember 2025.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 sesuai hasil evaluasi oleh Divre Jatim."},"feb":{"progres":"Direktur PP melalui surat Nomor 0059/041.4/PP/2026 tanggal 25 Februari 2026 menyampaikan bahwa terdapat pembangunan Enchanting Forest, maka perpanjangan diproses melalui mekanisme perpanjangan dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"mar":{"progres":"Sebagaimana BA Monev tanggal 4 Desember 2025, perpanjangan diproses melalui mekanisme perpanjangan dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"apr":{"progres":"Plt Direktur PP melalui surat Nomor 0092/041.4/PP/2026 tanggal 22 April 2026 menyampaikan bahwa perpanjangan diproses melalui mekanisme dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"mei":{"progres":"Telah dilaksanakan pertemuan antara perwakilan PT TSI dengan Deprenbangbis Divre Jatim pada tanggal 11 Mei 2026.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."}}},"docs":{}},
@@ -878,34 +1294,71 @@ function getLatestMonthKey(yearData) {
 }
 
 function buildDocsHtml(d, idx) {
-  if (!d.docs || Object.keys(d.docs).length === 0) {
-    return `<div class="doc-section">
-      <div class="doc-section-title">📎 Dokumen per Tahapan <span style="font-weight:400;font-size:10px;text-transform:none">(klik lingkaran tahap di atas untuk upload)</span></div>
-      <div class="no-docs">Belum ada dokumen. Klik tahapan di atas untuk mengupload dokumen.</div>
-    </div>`;
-  }
+  // Hitung total dokumen semua tahapan
+  const totalDocs = d.docs ? STEPS_ALL.reduce((s, step) => s + ((d.docs[step] || []).length), 0) : 0;
+
   let groupsHtml = '';
   STEPS_ALL.forEach(step => {
-    const docs = d.docs[step] || [];
-    if (docs.length === 0) return;
+    const docs = (d.docs && d.docs[step]) || [];
+    const isDone = d.steps_done && d.steps_done.includes(step);
+    const isCurrent = d.current_step === step;
+
+    // Ambil step_folder_url dari dokumen pertama yang punya
+    const stepFolderUrl = docs.length > 0 && docs[0].step_folder_url ? docs[0].step_folder_url : '';
+
     groupsHtml += `<div class="doc-step-group">
-      <div class="doc-step-name">${step}
-        <button class="btn-upload-doc" onclick="openUploadStep(${idx},'${step}')">＋ Tambah</button>
+      <div class="doc-step-name">
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;padding:2px 6px;border-radius:10px;font-weight:700;background:${isDone?'var(--green-light)':isCurrent?'#fff9c4':'var(--gray-light)'};color:${isDone?'var(--leaf)':isCurrent?'var(--amber-dark)':'var(--muted)'}">${isDone?'✓':isCurrent?'→':'·'}</span>
+          ${step}
+          <span style="font-size:10px;color:var(--muted);font-weight:400">${docs.length > 0 ? docs.length + ' dok' : ''}</span>
+          ${stepFolderUrl ? `<a href="${stepFolderUrl}" target="_blank" style="font-size:9px;color:var(--blue);text-decoration:none;border:1px solid var(--blue);border-radius:8px;padding:1px 6px" title="Buka folder tahapan di Drive">📁 Drive</a>` : ''}
+        </span>
+        <button class="btn-upload-doc" onclick="openUploadStep(${idx},'${step}')">＋ Tambah PDF</button>
       </div>
       <div class="doc-list">
-        ${docs.map((doc, di) => `
-          <div class="doc-item">
-            <span class="doc-item-icon">${getFileIcon(doc.name)}</span>
-            <span class="doc-item-name" title="${doc.name}">${doc.name}</span>
-            ${doc.desc ? `<span style="font-size:10px;color:var(--muted)">${doc.desc}</span>` : ''}
-            <span class="doc-item-date">${doc.date}</span>
-            <button class="doc-item-del" onclick="deleteDoc(${idx},'${step}',${di})" title="Hapus">✕</button>
-          </div>`).join('')}
+        ${docs.length === 0
+          ? `<div class="no-docs" style="padding:6px 0">Belum ada dokumen untuk tahap ini</div>`
+          : docs.map((doc, di) => {
+              const hasFile = !!(doc.drive_url || doc.base64);
+              const kb = doc.size ? (doc.size > 1024*1024 ? (doc.size/1024/1024).toFixed(1)+' MB' : Math.round(doc.size/1024)+' KB') : '';
+              return `<div class="doc-item ${doc._uploading?'doc-uploading':''}">
+                <span class="doc-item-icon">📕</span>
+                <div class="doc-item-info">
+                  <div class="doc-item-name" title="${doc.name}">${doc.name}</div>
+                  <div class="doc-item-meta">${doc.date || ''}${kb ? ' · '+kb : ''}${doc.desc ? ' · '+doc.desc : ''}${doc._uploading ? ' · <span class="doc-upload-progress">⏳ mengupload...</span>' : ''}</div>
+                </div>
+                <div class="doc-item-actions">
+                  ${hasFile ? `<button class="doc-btn doc-btn-view" onclick="viewDoc(${idx},'${step}',${di})" title="Lihat PDF">👁 Lihat</button>` : ''}
+                  ${hasFile ? `<button class="doc-btn doc-btn-download" onclick="downloadDoc(${idx},'${step}',${di})" title="Download PDF">⬇ Download</button>` : ''}
+                  <button class="doc-btn doc-btn-del" onclick="deleteDoc(${idx},'${step}',${di})" title="Hapus dokumen">✕</button>
+                </div>
+              </div>`;
+            }).join('')}
       </div>
     </div>`;
   });
+
+  // Cari mitra_folder_url dari dokumen manapun
+  let mitraFolderUrl = '';
+  if (d.docs) {
+    for (const step of Object.keys(d.docs)) {
+      for (const doc of (d.docs[step] || [])) {
+        if (doc.mitra_folder_url) { mitraFolderUrl = doc.mitra_folder_url; break; }
+      }
+      if (mitraFolderUrl) break;
+    }
+  }
+
   return `<div class="doc-section">
-    <div class="doc-section-title">📎 Dokumen per Tahapan</div>
+    <div class="doc-section-title">
+      <span>📎 Dokumen per Tahapan
+        <span style="font-weight:400;font-size:10px;text-transform:none;color:var(--muted)">
+          ${totalDocs > 0 ? totalDocs + ' dokumen tersimpan' : 'klik ＋ Tambah PDF di tahapan untuk upload'}
+        </span>
+      </span>
+      ${mitraFolderUrl ? `<a href="${mitraFolderUrl}" target="_blank" class="btn-drive-folder" title="Buka folder mitra di Google Drive">📁 Folder Drive</a>` : ''}
+    </div>
     ${groupsHtml}
   </div>`;
 }
@@ -1299,14 +1752,24 @@ function previewUploadFiles() {
   }).join('');
 }
 
-function saveUpload() {
+// Konversi File ke base64 string
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]); // ambil bagian base64 saja
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function saveUpload() {
   const idx = parseInt(document.getElementById('upload-idx').value);
   const step = document.getElementById('upload-step').value;
   const desc = document.getElementById('upload-desc').value.trim();
   const files = document.getElementById('upload-file').files;
   const errEl = document.getElementById('upload-file-error');
+  const saveBtn = document.querySelector('#modal-upload .btn-primary');
 
-  // Reset error
   errEl.style.display = 'none'; errEl.textContent = '';
 
   if (files.length === 0) {
@@ -1314,16 +1777,12 @@ function saveUpload() {
     errEl.style.display = 'block';
     return;
   }
-
-  // Validasi semua file harus PDF
   const nonPdf = [...files].filter(f => !f.name.toLowerCase().endsWith('.pdf') && f.type !== 'application/pdf');
   if (nonPdf.length > 0) {
-    errEl.textContent = `❌ File berikut bukan PDF: ${nonPdf.map(f => f.name).join(', ')}. Hanya file PDF yang diizinkan.`;
+    errEl.textContent = `❌ File berikut bukan PDF: ${nonPdf.map(f => f.name).join(', ')}.`;
     errEl.style.display = 'block';
     return;
   }
-
-  // Validasi ukuran maks 10MB per file
   const tooBig = [...files].filter(f => f.size > 10 * 1024 * 1024);
   if (tooBig.length > 0) {
     errEl.textContent = `❌ File melebihi 10 MB: ${tooBig.map(f => f.name).join(', ')}.`;
@@ -1335,20 +1794,215 @@ function saveUpload() {
   if (!d.docs) d.docs = {};
   if (!d.docs[step]) d.docs[step] = [];
   const today = new Date().toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'});
-  [...files].forEach(f => {
-    d.docs[step].push({ name: f.name, desc, date: today, size: f.size });
-  });
+
+  // Disable tombol simpan selama proses
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Mengupload…'; }
   closeModal('modal-upload');
-  renderDetail(d);
-  showToast(`📎 ${files.length} dokumen PDF berhasil ditambahkan ke "${step}"`);
+
+  let uploadedCount = 0;
+  for (const file of [...files]) {
+    const tempKey = 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+    // Tambahkan placeholder dulu ke UI (dengan flag uploading)
+    const docObj = { name: file.name, desc, date: today, size: file.size, _tempKey: tempKey, _uploading: true, base64: null, drive_url: null };
+    d.docs[step].push(docObj);
+    renderDetail(d); // tampilkan dengan status "mengupload..."
+
+    try {
+      const base64 = await fileToBase64(file);
+      docObj.base64 = base64; // simpan base64 untuk preview lokal
+      docObj._uploading = false;
+
+      // Kirim ke Apps Script untuk disimpan ke Google Drive
+      if (isConnected && d.id) {
+        setSyncBadge('loading', '📎 Mengupload dokumen ke Drive…');
+        try {
+          const res = await apiCall('uploadDokumen', { data: {
+            mitra_id: d.id,
+            mitra_nama: d.mitra,
+            step,
+            nama_file: file.name,
+            deskripsi: desc,
+            ukuran_kb: Math.round(file.size / 1024),
+            base64_content: base64,
+            _tempKey: tempKey
+          }});
+          if (res.success && res.data) {
+            if (res.data.drive_url)        docObj.drive_url        = res.data.drive_url;
+            if (res.data.drive_preview)    docObj.drive_preview    = res.data.drive_preview;
+            if (res.data.drive_file_id)    docObj.drive_file_id    = res.data.drive_file_id;
+            if (res.data.step_folder_url)  docObj.step_folder_url  = res.data.step_folder_url;
+            if (res.data.mitra_folder_url) docObj.mitra_folder_url = res.data.mitra_folder_url;
+            if (res.data.id)               docObj.id               = res.data.id;
+            delete docObj._tempKey;
+            setSyncBadge('ok', `✅ Tersimpan · ${DATA.length} mitra`);
+            console.log('[Upload OK]', file.name, '→', res.data.drive_url);
+            showToast(`✅ "${file.name}" tersimpan di Google Drive`);
+          } else {
+            // Tampilkan error detail untuk debug
+            const errMsg = res.error || 'Unknown error';
+            console.error('[Upload Drive GAGAL]', file.name, errMsg, res);
+            setSyncBadge('err', '⚠️ Upload Drive gagal');
+            showToast(`❌ Upload gagal: ${errMsg}`);
+          }
+        } catch(uploadErr) {
+          setSyncBadge('err', '⚠️ Koneksi gagal — file disimpan lokal');
+          console.warn('Upload error:', uploadErr);
+        }
+      }
+      uploadedCount++;
+    } catch(readErr) {
+      docObj._uploading = false;
+      docObj._error = true;
+      console.error('Gagal baca file:', readErr);
+    }
+    renderDetail(d);
+  }
+
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '📎 Simpan Dokumen'; }
+  showToast(`📎 ${uploadedCount} dokumen PDF berhasil diupload ke "${step}"`);
+}
+
+// Lihat PDF — buka di modal viewer
+function viewDoc(idx, step, di) {
+  const doc = DATA[idx] && DATA[idx].docs && DATA[idx].docs[step] && DATA[idx].docs[step][di];
+  if (!doc) return;
+
+  if (doc.drive_preview) {
+    // Gunakan URL /preview dari Drive (embed-friendly)
+    openPdfModal(doc.name, doc.drive_preview, 'iframe', doc.drive_url);
+    return;
+  }
+  if (doc.drive_url) {
+    // Construct preview URL dari view URL
+    const previewUrl = doc.drive_url
+      .replace('/view?usp=sharing', '/preview')
+      .replace('/view', '/preview');
+    openPdfModal(doc.name, previewUrl, 'iframe', doc.drive_url);
+    return;
+  }
+  if (doc.base64) {
+    // Tampilkan dari base64 lokal (belum tersync ke Drive)
+    const dataUrl = 'data:application/pdf;base64,' + doc.base64;
+    openPdfModal(doc.name, dataUrl, 'object', null);
+    return;
+  }
+  showToast('⚠️ File belum tersedia untuk ditampilkan.');
+}
+
+function openPdfModal(name, src, type, driveViewUrl) {
+  let modal = document.getElementById('modal-pdf-viewer');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-pdf-viewer';
+    modal.className = 'modal-overlay hidden';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="modal modal-pdf">
+      <div class="modal-header" style="padding:10px 16px">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+          <span style="font-size:18px">📕</span>
+          <div style="font-size:13px;font-weight:700;color:var(--forest);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${name}">${name}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;margin-left:10px">
+          ${driveViewUrl ? `<a href="${driveViewUrl}" target="_blank" class="doc-btn doc-btn-view" style="text-decoration:none">🔗 Buka di Drive</a>` : ''}
+          <button class="doc-btn doc-btn-download" id="pdf-dl-btn">⬇ Download</button>
+          <button class="modal-close" onclick="closeModal('modal-pdf-viewer')" style="font-size:18px;background:none;border:none;cursor:pointer;color:var(--muted);padding:0 4px">✕</button>
+        </div>
+      </div>
+      <div id="pdf-viewer-container" style="width:100%;height:calc(90vh - 64px);background:#525659;border-radius:0 0 12px 12px;overflow:hidden"></div>
+    </div>`;
+
+  // Render konten PDF
+  const container = document.getElementById('pdf-viewer-container');
+  if (type === 'iframe') {
+    container.innerHTML = `
+      <iframe src="${src}" style="width:100%;height:100%;border:none" title="${name}"
+        onerror="this.parentNode.innerHTML='<div style=\'color:white;padding:30px;text-align:center\'><p>❌ Tidak bisa menampilkan PDF di sini.</p><p style=\'margin-top:10px\'><a href=\'${driveViewUrl||src}\' target=\'_blank\' style=\'color:#b7e4c7;font-weight:700\'>Buka di Google Drive →</a></p></div>'">
+      </iframe>
+      <div style="position:absolute;bottom:10px;right:14px;background:rgba(0,0,0,0.5);color:white;font-size:10px;padding:4px 8px;border-radius:10px;pointer-events:none">
+        Jika PDF tidak muncul, klik "Buka di Drive"
+      </div>`;
+    container.style.position = 'relative';
+  } else {
+    // base64 lokal
+    container.innerHTML = `
+      <object data="${src}" type="application/pdf" style="width:100%;height:100%;border:none">
+        <div style="color:white;padding:30px;text-align:center">
+          <p>Browser tidak mendukung tampilan PDF inline.</p>
+          <p style="margin-top:12px"><a href="${src}" download="${name}" style="color:#b7e4c7;font-weight:700">⬇ Klik di sini untuk download</a></p>
+        </div>
+      </object>`;
+  }
+
+  // Tombol download
+  const dlBtn = document.getElementById('pdf-dl-btn');
+  if (dlBtn) {
+    dlBtn.onclick = () => {
+      if (driveViewUrl) {
+        const fileId = driveViewUrl.match(/\/d\/([^/]+)\//);
+        if (fileId) {
+          const dlUrl = 'https://drive.google.com/uc?export=download&id=' + fileId[1];
+          window.open(dlUrl, '_blank');
+          return;
+        }
+      }
+      // fallback base64 download
+      const a = document.createElement('a');
+      a.href = src;
+      a.download = name;
+      a.click();
+    };
+  }
+
+  openModal('modal-pdf-viewer');
+}
+
+// Download PDF
+function downloadDoc(idx, step, di) {
+  const doc = DATA[idx] && DATA[idx].docs && DATA[idx].docs[step] && DATA[idx].docs[step][di];
+  if (!doc) return;
+
+  if (doc.drive_file_id) {
+    // Format URL download Google Drive yang benar
+    const dlUrl = 'https://drive.google.com/uc?export=download&id=' + doc.drive_file_id;
+    window.open(dlUrl, '_blank');
+    showToast('⬇ Mendownload dari Google Drive…');
+    return;
+  }
+  if (doc.drive_url) {
+    // Fallback: extract file ID dari URL view
+    const match = doc.drive_url.match(/\/d\/([^/]+)\//);
+    if (match) {
+      const dlUrl = 'https://drive.google.com/uc?export=download&id=' + match[1];
+      window.open(dlUrl, '_blank');
+      showToast('⬇ Mendownload dari Google Drive…');
+      return;
+    }
+  }
+  if (doc.base64) {
+    // Download dari base64 lokal (belum diupload ke Drive)
+    const a = document.createElement('a');
+    a.href = 'data:application/pdf;base64,' + doc.base64;
+    a.download = doc.name;
+    a.click();
+    showToast('⬇ Mendownload file lokal…');
+    return;
+  }
+  showToast('⚠️ File tidak tersedia untuk didownload.');
 }
 
 function deleteDoc(idx, step, di) {
-  if (!confirm('Hapus dokumen ini?')) return;
+  const doc = DATA[idx] && DATA[idx].docs && DATA[idx].docs[step] && DATA[idx].docs[step][di];
+  if (!confirm(`Hapus dokumen "${doc ? doc.name : ''}"?\nTindakan ini tidak dapat dibatalkan.`)) return;
+  const docId = doc && doc.id;
   DATA[idx].docs[step].splice(di, 1);
   if (DATA[idx].docs[step].length === 0) delete DATA[idx].docs[step];
   renderDetail(DATA[idx]);
   showToast('🗑 Dokumen dihapus.');
+  // Hapus dari Drive + Sheet via Apps Script
+  if (docId) autoSync('deleteDokumen', { id: docId });
 }
 
 // ==================== MODAL UTILS ====================
@@ -1411,6 +2065,20 @@ async function _execSync(type, payload) {
       res = await apiCall('saveMonthly', { data: payload });
     } else if (type === 'deleteMonthly') {
       res = await apiCall('saveMonthly', { data: { ...payload, progres: '', tindak_lanjut: '' } });
+    } else if (type === 'uploadDokumen') {
+      res = await apiCall('uploadDokumen', { data: payload });
+      if (res && res.success && res.data) {
+        const d = DATA.find(m => m.id === payload.mitra_id);
+        if (d && d.docs && d.docs[payload.step]) {
+          const doc = d.docs[payload.step].find(x => x._tempKey === payload._tempKey);
+          if (doc) {
+            if (res.data.id) doc.id = res.data.id;
+            if (res.data.drive_url) doc.drive_url = res.data.drive_url;
+            if (res.data.drive_file_id) doc.drive_file_id = res.data.drive_file_id;
+            delete doc._tempKey;
+          }
+        }
+      }
     } else if (type === 'saveDokumen') {
       res = await apiCall('saveDokumen', { data: payload });
       if (res && res.success && res.data && res.data.id) {
@@ -1451,7 +2119,7 @@ function pushChangesToSheets() {
 async function apiCall(action, data = {}) {
   const dynamicUrl = window._appsScriptUrl || localStorage.getItem('bangbis_api_url') || APPS_SCRIPT_URL;
   if (!dynamicUrl || dynamicUrl === 'PASTE_URL_DISINI') throw new Error('URL belum dikonfigurasi. Buka ⚙️ Pengaturan.');
-  const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','importData'].includes(action);
+  const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','uploadDokumen','importData'].includes(action);
   if (isWrite) {
     const resp = await fetch(dynamicUrl, {
       method: 'POST',
@@ -1481,12 +2149,39 @@ async function loadFromSheets() {
       renderYearBtns(); updateStats(); buildList(); buildTable();
       return;
     }
+    // Simpan base64 lokal sebelum overwrite (base64 tidak disimpan di Sheets)
+    const localBase64Map = {};
+    DATA.forEach(d => {
+      if (d.id && d.docs) {
+        Object.entries(d.docs).forEach(([step, docs]) => {
+          (docs || []).forEach(doc => {
+            if (doc.id && doc.base64) {
+              localBase64Map[doc.id] = doc.base64;
+            }
+          });
+        });
+      }
+    });
+
     DATA = raw.map(m => ({
       ...m,
       last_step: parseInt(m.last_step) || 0,
       tahun: parseInt(m.tahun) || 2026,
       steps_done: Array.isArray(m.steps_done) ? m.steps_done : [],
     }));
+
+    // Kembalikan base64 lokal ke dokumen yang sesuai
+    DATA.forEach(d => {
+      if (d.docs) {
+        Object.values(d.docs).forEach(docs => {
+          (docs || []).forEach(doc => {
+            if (doc.id && localBase64Map[doc.id]) {
+              doc.base64 = localBase64Map[doc.id];
+            }
+          });
+        });
+      }
+    });
     isConnected = true;
     hideImportBanner();
     setSyncBadge('ok', `✅ Tersinkron · ${DATA.length} mitra`);
@@ -1592,30 +2287,8 @@ deleteMonthReport = function(idx, bulan, tahun) {
   }
 };
 
-// ── PATCH: saveUpload → auto-sync langsung ke Sheets ──────────
-const _origSaveUpload = saveUpload;
-saveUpload = function() {
-  const idx = parseInt(document.getElementById('upload-idx').value);
-  const step = document.getElementById('upload-step').value;
-  const d = DATA[idx];
-  _origSaveUpload();
-  if (d && d.docs && d.docs[step]) {
-    const files = d.docs[step];
-    const latest = files[files.length - 1];
-    if (latest) {
-      latest._tempKey = 'doc_' + Date.now();
-      autoSync('saveDokumen', {
-        mitra_id: d.id || null,
-        mitra_nama: d.mitra,
-        step,
-        nama_file: latest.name,
-        deskripsi: latest.desc || '',
-        ukuran_kb: Math.round((latest.size || 0) / 1024),
-        _tempKey: latest._tempKey
-      });
-    }
-  }
-};
+// saveUpload sudah async dan handle autoSync sendiri via uploadDokumen action
+// (upload PDF ke Google Drive, simpan metadata ke sheet Dokumen)
 
 // ── PATCH: deleteDoc → auto-sync langsung ke Sheets ───────────
 const _origDeleteDoc = deleteDoc;
@@ -1628,15 +2301,25 @@ deleteDoc = function(idx, step, di) {
 };
 
 // ==================== INIT ====================
-renderYearBtns();
-updateStats();
-buildList();
-buildTable();
 
-// Auto-load dari Google Sheets jika URL sudah dikonfigurasi
-if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'PASTE_URL_DISINI') {
-  loadFromSheets();
-}
+// Cek session dulu sebelum render app
+(function initApp() {
+  const sessionOk = checkExistingSession();
+  if (sessionOk) {
+    // Session valid — render app langsung
+    renderYearBtns();
+    updateStats();
+    buildList();
+    buildTable();
+    // Auto-load dari Google Sheets jika URL sudah dikonfigurasi
+    const savedUrl = window._appsScriptUrl || localStorage.getItem('bangbis_api_url');
+    if (savedUrl) loadFromSheets();
+  } else {
+    // Tidak ada session — hanya render minimal (tersembunyi di belakang login)
+    renderYearBtns();
+    buildList();
+  }
+})();
 </script>
 
 <!-- ── SYNC BADGE & SETTINGS BUTTON ── -->
@@ -1744,8 +2427,8 @@ if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'PASTE_URL_DISINI') {
 (function initSettingsUrl() {
   const saved = localStorage.getItem('bangbis_api_url');
   if (saved) {
-    document.getElementById('settings-url').value = saved;
-    // Inject ke variabel APPS_SCRIPT_URL
+    const el = document.getElementById('settings-url');
+    if (el) el.value = saved;
     window._appsScriptUrl = saved;
   }
 })();
@@ -1758,7 +2441,7 @@ apiCall = async function(action, data) {
   // Temporarily override global
   const orig = APPS_SCRIPT_URL;
   // Use dynamic url directly
-  const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','importData'].includes(action);
+  const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','uploadDokumen','importData'].includes(action);
   if (isWrite) {
     const resp = await fetch(dynamicUrl, {
       method: 'POST',
@@ -1781,6 +2464,7 @@ async function saveSettingsUrl() {
   }
   localStorage.setItem('bangbis_api_url', url);
   window._appsScriptUrl = url;
+  updateActivityTime(); // reset timer
   document.getElementById('conn-status').innerHTML = '<span class="status-dot dot-warn"></span> Sedang menguji koneksi…';
   closeModal('modal-settings');
   await loadFromSheets();
@@ -1790,12 +2474,7 @@ async function saveSettingsUrl() {
 }
 
 // Auto-load jika ada saved URL
-const _savedUrl = localStorage.getItem('bangbis_api_url');
-if (_savedUrl) {
-  window._appsScriptUrl = _savedUrl;
-  document.getElementById('settings-url').value = _savedUrl;
-  loadFromSheets();
-}
+// Auto-load handled by initApp() / hideLoginScreen() above
 </script>
 
 </body>
