@@ -704,41 +704,26 @@
 
 <script>
 // ==================== AUTH & SESSION ====================
+//
+// ⚠️ PERUBAHAN KEAMANAN: username/password TIDAK LAGI tersimpan di kode
+// HTML ini. Sebelumnya daftar username+password (termasuk password ASLI
+// dalam bentuk teks biasa di komentar) tertulis langsung di sini — siapa
+// pun yang membuka "View Source" atau Inspect bisa membacanya, dan login
+// bisa dilewati (bypass) sepenuhnya lewat Console karena validasinya
+// terjadi di browser. Sekarang validasi username/password dilakukan di
+// SERVER (Apps Script, sheet "Users"), HTML hanya mengirim kredensial
+// sekali saat login dan menyimpan TOKEN sesi (bukan password) sebagai
+// balasannya. Setiap request berikutnya menyertakan token itu, dan
+// server menolak request apa pun (termasuk yang dipanggil manual lewat
+// Console) jika tokennya tidak ada/tidak valid/sudah kedaluwarsa.
 
-// ── Daftar user (username: password hash sederhana) ──────────
-// Password disimpan sebagai SHA-256 hash untuk keamanan dasar
-// Untuk generate hash baru: jalankan hashPassword('passwordBaru') di console
-// Daftar users default:
-//   admin    / Bangbis@2024
-//   mm       / MM@perhutani
-//   abm      / ABM@perhutani
-//   dr       / DR@perhutani
-//   iv       / IV@perhutani
-//   va       / VA@perhutani
-const USERS = {
-  'admin': { hash: '66a4dcb7e6212e0707c93960f61d792c', name: 'Administrator', role: 'admin', pic: 'ADM' },
-  'mm':    { hash: 'ad10c431e07106190c5fb9d0ce121bfb', name: 'MM',             role: 'user',  pic: 'MM'  },
-  'abm':   { hash: '772eba0dca5d30d867c4ef9798f835c0', name: 'ABM',            role: 'user',  pic: 'ABM' },
-  'dr':    { hash: '4d5fce0b9570c5a33af227e7d8b50cbc', name: 'DR',             role: 'user',  pic: 'DR'  },
-  'iv':    { hash: '4e1bb585b6fc94f53fca7773861a6a9a', name: 'IV',             role: 'user',  pic: 'IV'  },
-  'va':    { hash: '2de7f940bdc866ecb1e2cde92a7b8ec7', name: 'VA',             role: 'user',  pic: 'VA'  },
-};
-
-const SESSION_DURATION_MS = 60 * 60 * 1000; // 1 jam = 3.600.000 ms
-const SESSION_KEY  = 'bangbis_session';
+const SESSION_DURATION_MS = 60 * 60 * 1000; // 1 jam = 3.600.000 ms — selaras dengan SESSION_DURATION_HOURS di server
+const SESSION_KEY  = 'bangbis_session';   // menyimpan {username, token, name, role, pic}
 const ACTIVITY_KEY = 'bangbis_last_activity';
 
 let sessionCheckInterval = null;
 let sessionTimerInterval = null;
 let currentUser = null;
-
-// ── Hash password sederhana (MD5-like, cukup untuk proteksi dasar) ─
-async function hashPassword(pwd) {
-  const msgBuffer = new TextEncoder().encode(pwd);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2,'0')).join('').substring(0, 32);
-}
 
 // ── Cek session saat halaman dibuka ──────────────────────────
 function checkExistingSession() {
@@ -746,27 +731,24 @@ function checkExistingSession() {
   const lastActivity = parseInt(localStorage.getItem(ACTIVITY_KEY) || '0');
   const now = Date.now();
 
-  if (!session || !session.username) {
+  if (!session || !session.username || !session.token) {
     showLoginScreen();
     return false;
   }
 
-  // Cek apakah lebih dari 1 jam tidak aktif
+  // Cek apakah lebih dari 1 jam tidak aktif (cek sisi client untuk UX cepat;
+  // server tetap akan menolak token yang sudah expired terlepas dari ini)
   if (now - lastActivity > SESSION_DURATION_MS) {
     clearSession();
     showLoginScreen();
     return false;
   }
 
-  // Session valid — restore user
-  const user = USERS[session.username];
-  if (!user) {
-    clearSession();
-    showLoginScreen();
-    return false;
-  }
-
-  currentUser = { username: session.username, ...user };
+  // Session valid secara lokal — restore user dari data yang disimpan saat login.
+  // Validasi SEBENARNYA (apakah token masih diterima server) terjadi otomatis
+  // di setiap pemanggilan apiCall() berikutnya — jika server menolak (auth_required),
+  // pengguna akan diarahkan kembali ke layar login.
+  currentUser = { username: session.username, name: session.name, role: session.role, pic: session.pic };
   hideLoginScreen();
   startSessionMonitor();
   updateActivityTime();
@@ -798,21 +780,25 @@ async function doLogin() {
   btnEl.disabled = true;
   btnEl.textContent = '⏳ Memverifikasi…';
 
-  const user = USERS[username];
-  if (!user) {
-    loginFailed(usernameEl, passwordEl, errorEl, btnEl, 'Username tidak ditemukan.');
+  let res;
+  try {
+    res = await apiCall('login', { username, password }, /* skipAuth */ true);
+  } catch (err) {
+    loginFailed(usernameEl, passwordEl, errorEl, btnEl, 'Gagal terhubung ke server: ' + err.message);
     return;
   }
 
-  const inputHash = await hashPassword(password);
-  if (inputHash !== user.hash) {
-    loginFailed(usernameEl, passwordEl, errorEl, btnEl, 'Password salah.');
+  if (!res || !res.success || !res.data || !res.data.token) {
+    loginFailed(usernameEl, passwordEl, errorEl, btnEl, (res && res.error) || 'Username atau password salah.');
     return;
   }
 
-  // ✅ Login berhasil
-  currentUser = { username, ...user };
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ username, loginAt: Date.now() }));
+  // ✅ Login berhasil — simpan TOKEN (bukan password) dari server
+  const u = res.data;
+  currentUser = { username: u.username, name: u.name, role: u.role, pic: u.pic };
+  localStorage.setItem(SESSION_KEY, JSON.stringify({
+    username: u.username, token: u.token, name: u.name, role: u.role, pic: u.pic
+  }));
   updateActivityTime();
   hideLoginScreen();
   startSessionMonitor();
@@ -872,6 +858,11 @@ function showLoginFromExpired() {
 
 function doLogout() {
   if (!confirm('Keluar dari aplikasi?')) return;
+  // Beri tahu server untuk menghapus token ini juga (best-effort, tidak menunggu)
+  const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+  if (session && session.token) {
+    apiCall('logout', { token: session.token }, true).catch(() => {});
+  }
   clearSession();
   location.reload();
 }
@@ -967,14 +958,12 @@ shakeStyle.textContent = `@keyframes shake {
 document.head.appendChild(shakeStyle);
 
 // ══════════════════════════════════════════════════════════════
-// HELPER: generate hash untuk menambah user baru
-// Jalankan di browser console: generateUserHash('passwordBaru').then(console.log)
+// CATATAN: pembuatan/reset user & password sekarang dilakukan di
+// server (Apps Script), lewat fungsi createOrResetUsers() yang
+// dijalankan langsung dari editor Apps Script — BUKAN dari sini.
+// Ini sengaja agar password tidak pernah diproses/terlihat di sisi
+// browser sama sekali.
 // ══════════════════════════════════════════════════════════════
-async function generateUserHash(pwd) {
-  const h = await hashPassword(pwd);
-  console.log('Hash untuk password "' + pwd + '":', h);
-  return h;
-}
 
 // ==================== DATA ====================
 let DATA = [
@@ -2116,22 +2105,45 @@ function pushChangesToSheets() {
 }
 
 // ── API Helper ──────────────────────────────────────────────
-async function apiCall(action, data = {}) {
+// skipAuth: true HANYA untuk action 'login' dan 'logout' yang memang
+// tidak butuh/tidak punya token. Semua action lain otomatis menyertakan
+// token sesi yang tersimpan di localStorage — tanpa token valid, server
+// (Apps Script) akan menolak request ini, terlepas dari apa pun yang
+// dilakukan di sisi browser/Console.
+async function apiCall(action, data = {}, skipAuth = false) {
   const dynamicUrl = window._appsScriptUrl || localStorage.getItem('bangbis_api_url') || APPS_SCRIPT_URL;
   if (!dynamicUrl || dynamicUrl === 'PASTE_URL_DISINI') throw new Error('URL belum dikonfigurasi. Buka ⚙️ Pengaturan.');
+
+  let payload = { action, ...data };
+  if (!skipAuth) {
+    const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if (session && session.token) payload.token = session.token;
+  }
+
   const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','uploadDokumen','importData'].includes(action);
+  let res;
   if (isWrite) {
     const resp = await fetch(dynamicUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action, ...data })
+      body: JSON.stringify(payload)
     });
-    return resp.json();
+    res = await resp.json();
   } else {
-    const params = new URLSearchParams({ action, ...(data || {}) });
+    const params = new URLSearchParams(payload);
     const resp = await fetch(`${dynamicUrl}?${params}`);
-    return resp.json();
+    res = await resp.json();
   }
+
+  // Server menolak karena token tidak ada/tidak valid/kedaluwarsa —
+  // paksa kembali ke layar login, jangan biarkan UI diam-diam gagal terus.
+  if (!skipAuth && res && res.success === false && res.auth_required) {
+    clearSession();
+    showLoginScreen();
+    showToast('⚠️ Sesi berakhir, silakan login kembali.');
+  }
+
+  return res;
 }
 
 // ── Load semua data dari Sheets ─────────────────────────────
