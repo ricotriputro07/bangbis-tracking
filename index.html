@@ -703,19 +703,6 @@
 </div>
 
 <script>
-// ==================== AUTH & SESSION ====================
-//
-// ⚠️ PERUBAHAN KEAMANAN: username/password TIDAK LAGI tersimpan di kode
-// HTML ini. Sebelumnya daftar username+password (termasuk password ASLI
-// dalam bentuk teks biasa di komentar) tertulis langsung di sini — siapa
-// pun yang membuka "View Source" atau Inspect bisa membacanya, dan login
-// bisa dilewati (bypass) sepenuhnya lewat Console karena validasinya
-// terjadi di browser. Sekarang validasi username/password dilakukan di
-// SERVER (Apps Script, sheet "Users"), HTML hanya mengirim kredensial
-// sekali saat login dan menyimpan TOKEN sesi (bukan password) sebagai
-// balasannya. Setiap request berikutnya menyertakan token itu, dan
-// server menolak request apa pun (termasuk yang dipanggil manual lewat
-// Console) jika tokennya tidak ada/tidak valid/sudah kedaluwarsa.
 
 const SESSION_DURATION_MS = 60 * 60 * 1000; // 1 jam = 3.600.000 ms — selaras dengan SESSION_DURATION_HOURS di server
 const SESSION_KEY  = 'bangbis_session';   // menyimpan {username, token, name, role, pic}
