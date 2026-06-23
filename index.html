@@ -703,6 +703,19 @@
 </div>
 
 <script>
+// ==================== AUTH & SESSION ====================
+//
+// ⚠️ PERUBAHAN KEAMANAN: username/password TIDAK LAGI tersimpan di kode
+// HTML ini. Sebelumnya daftar username+password (termasuk password ASLI
+// dalam bentuk teks biasa di komentar) tertulis langsung di sini — siapa
+// pun yang membuka "View Source" atau Inspect bisa membacanya, dan login
+// bisa dilewati (bypass) sepenuhnya lewat Console karena validasinya
+// terjadi di browser. Sekarang validasi username/password dilakukan di
+// SERVER (Apps Script, sheet "Users"), HTML hanya mengirim kredensial
+// sekali saat login dan menyimpan TOKEN sesi (bukan password) sebagai
+// balasannya. Setiap request berikutnya menyertakan token itu, dan
+// server menolak request apa pun (termasuk yang dipanggil manual lewat
+// Console) jika tokennya tidak ada/tidak valid/sudah kedaluwarsa.
 
 const SESSION_DURATION_MS = 60 * 60 * 1000; // 1 jam = 3.600.000 ms — selaras dengan SESSION_DURATION_HOURS di server
 const SESSION_KEY  = 'bangbis_session';   // menyimpan {username, token, name, role, pic}
@@ -2432,28 +2445,11 @@ deleteDoc = function(idx, step, di) {
   }
 })();
 
-// Override APPS_SCRIPT_URL check dengan dynamic version
-const _origApiCall = apiCall;
-apiCall = async function(action, data) {
-  const dynamicUrl = window._appsScriptUrl || localStorage.getItem('bangbis_api_url') || APPS_SCRIPT_URL;
-  if (!dynamicUrl || dynamicUrl === 'PASTE_URL_DISINI') throw new Error('URL belum dikonfigurasi. Buka ⚙️ Pengaturan untuk setup.');
-  // Temporarily override global
-  const orig = APPS_SCRIPT_URL;
-  // Use dynamic url directly
-  const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','uploadDokumen','importData'].includes(action);
-  if (isWrite) {
-    const resp = await fetch(dynamicUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action, ...data })
-    });
-    return resp.json();
-  } else {
-    const params = new URLSearchParams({ action, ...(data || {}) });
-    const resp = await fetch(`${dynamicUrl}?${params}`);
-    return resp.json();
-  }
-};
+// CATATAN: dulu di sini ada kode yang menimpa ulang (override) fungsi
+// apiCall dengan versi tanpa token/auth — itu sebabnya login selalu
+// gagal terhubung walau URL & deploy sudah benar. Fungsi apiCall yang
+// benar (dengan auto-sisip token + dynamic URL) sudah didefinisikan
+// satu kali di atas; tidak perlu override apa pun di sini.
 
 async function saveSettingsUrl() {
   const url = document.getElementById('settings-url').value.trim();
