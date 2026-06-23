@@ -957,14 +957,6 @@ shakeStyle.textContent = `@keyframes shake {
 }`;
 document.head.appendChild(shakeStyle);
 
-// ══════════════════════════════════════════════════════════════
-// CATATAN: pembuatan/reset user & password sekarang dilakukan di
-// server (Apps Script), lewat fungsi createOrResetUsers() yang
-// dijalankan langsung dari editor Apps Script — BUKAN dari sini.
-// Ini sengaja agar password tidak pernah diproses/terlihat di sisi
-// browser sama sekali.
-// ══════════════════════════════════════════════════════════════
-
 // ==================== DATA ====================
 let DATA = [
   {"seq":1,"mitra":"PT Taman Safari Indonesia (TSI Prigen)","objek":"","pemroses":"Divre Jatim","jenis_ks":"Perpanjangan PKS","pic":"MM","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":["Permohonan","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Telah dilaksanakan monev oleh Divre Jatim, KPH Pasuruan dan PT TSI tanggal 4 Desember 2025.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 sesuai hasil evaluasi oleh Divre Jatim."},"feb":{"progres":"Direktur PP melalui surat Nomor 0059/041.4/PP/2026 tanggal 25 Februari 2026 menyampaikan bahwa terdapat pembangunan Enchanting Forest, maka perpanjangan diproses melalui mekanisme perpanjangan dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"mar":{"progres":"Sebagaimana BA Monev tanggal 4 Desember 2025, perpanjangan diproses melalui mekanisme perpanjangan dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"apr":{"progres":"Plt Direktur PP melalui surat Nomor 0092/041.4/PP/2026 tanggal 22 April 2026 menyampaikan bahwa perpanjangan diproses melalui mekanisme dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"mei":{"progres":"Telah dilaksanakan pertemuan antara perwakilan PT TSI dengan Deprenbangbis Divre Jatim pada tanggal 11 Mei 2026.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."}}},"docs":{}},
@@ -2444,12 +2436,6 @@ deleteDoc = function(idx, step, di) {
     window._appsScriptUrl = saved;
   }
 })();
-
-// CATATAN: dulu di sini ada kode yang menimpa ulang (override) fungsi
-// apiCall dengan versi tanpa token/auth — itu sebabnya login selalu
-// gagal terhubung walau URL & deploy sudah benar. Fungsi apiCall yang
-// benar (dengan auto-sisip token + dynamic URL) sudah didefinisikan
-// satu kali di atas; tidak perlu override apa pun di sini.
 
 async function saveSettingsUrl() {
   const url = document.getElementById('settings-url').value.trim();
