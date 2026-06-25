@@ -600,6 +600,14 @@
           <input type="text" class="form-input" id="f-no-pks" placeholder="Nomor perjanjian">
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tahun TTD PKS/MoU <span id="f-tahun-ttd-hint" style="color:var(--muted);font-weight:400">(aktif setelah tahap "Nomor PKS" dicentang)</span></label>
+          <select class="form-select" id="f-tahun-ttd" disabled>
+            <option value="">— Pilih tahun —</option>
+          </select>
+        </div>
+      </div>
       <div class="section-divider">Tahapan yang Sudah Selesai</div>
       <div class="steps-check-grid" id="steps-check-grid"></div>
     </div>
@@ -958,30 +966,10 @@ shakeStyle.textContent = `@keyframes shake {
 document.head.appendChild(shakeStyle);
 
 // ==================== DATA ====================
-let DATA = [
-  {"seq":1,"mitra":"PT Taman Safari Indonesia (TSI Prigen)","objek":"","pemroses":"Divre Jatim","jenis_ks":"Perpanjangan PKS","pic":"MM","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":["Permohonan","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Telah dilaksanakan monev oleh Divre Jatim, KPH Pasuruan dan PT TSI tanggal 4 Desember 2025.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 sesuai hasil evaluasi oleh Divre Jatim."},"feb":{"progres":"Direktur PP melalui surat Nomor 0059/041.4/PP/2026 tanggal 25 Februari 2026 menyampaikan bahwa terdapat pembangunan Enchanting Forest, maka perpanjangan diproses melalui mekanisme perpanjangan dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"mar":{"progres":"Sebagaimana BA Monev tanggal 4 Desember 2025, perpanjangan diproses melalui mekanisme perpanjangan dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"apr":{"progres":"Plt Direktur PP melalui surat Nomor 0092/041.4/PP/2026 tanggal 22 April 2026 menyampaikan bahwa perpanjangan diproses melalui mekanisme dengan mengubah skema kerja sama.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."},"mei":{"progres":"Telah dilaksanakan pertemuan antara perwakilan PT TSI dengan Deprenbangbis Divre Jatim pada tanggal 11 Mei 2026.","tl":"Proses perpanjangan kerja sama sesuai Perdir 06/2024 oleh Divre Jatim."}}},"docs":{}},
-  {"seq":2,"mitra":"PT Taman Wisata Soemo Suparto (WW Pantai Midodaren)","objek":"","pemroses":"KPH Kediri","jenis_ks":"Perpanjangan PKS","pic":"MM","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":["Permohonan"],"last_step":1,"current_step":"Pernyataan Minat","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Proses review Perdir 06/2024 oleh Divisi Hukum secara menyeluruh.","tl":"Divisi Hukum masih berproses mereview Perdir 06/2024."},"feb":{"progres":"Review Perdir 06/2024 oleh Divisi Hukum telah selesai.","tl":"Proses finalisasi draft revisi Perdir 06/2024."},"mar":{"progres":"Penyusunan kajian bisnis terkait perpanjangan kerja sama TWSS.","tl":"Draft final revisi Perdir 06/2024 telah disampaikan ke Plt Direktur PP."},"apr":{"progres":"Pendampingan BPKP terkait kerja sama yang menggunakan Perdir 06/2024.","tl":"Hasil pendampingan BPKP terhadap kerja sama yang menggunakan Perdir 06/2024."},"mei":{"progres":"Pendampingan BPKP lingkup Jawa Timur terkait kerja sama yang menggunakan Perdir 06/2024.","tl":"Hasil pendampingan BPKP terhadap kerja sama yang menggunakan Perdir 06/2024."}}},"docs":{}},
-  {"seq":3,"mitra":"Badan Pelaksana Otorita Borobudur (BPOB)","objek":"","pemroses":"","jenis_ks":"","pic":"","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":[],"last_step":0,"current_step":"Permohonan","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Hasil rapat tanggal 18 Desember 2025: Pelepasan Kawasan Hutan, Pembayaran PNBP, Kendala aksesibilitas kawasan BOB.","tl":"Perhutani bersiap terhadap kemungkinan lepasnya kawasan hutan 250 Ha."},"apr":{"progres":"Monitoring perkembangan revisi Perpres No.46/2017.","tl":"Koordinasi tindak lanjut dengan Kementerian Kehutanan."},"mei":{"progres":"BPOB menyampaikan laporan pendapatan tahunan atas pemanfaatan lahan kerja sama.","tl":"Perhutani menerbitkan invoice tagihan pembayaran Fixed Sharing."}}},"docs":{}},
-  {"seq":4,"mitra":"Faunaland Safari Indonesia","objek":"Wisata","pemroses":"Kanpus","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat"],"last_step":2,"current_step":"Penyusunan KAK","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"PT Faunaland sudah menyampaikan Proposal Bisnis dan Anak Perusahaan.","tl":"Monitoring jawaban atas verifikasi lahan dan progress pemenuhan dokumen lingkungan."},"mei":{"progres":"Dari mitra sudah menyampaikan, belum ada perkembangan lebih lanjut terkait permohonan.","tl":"Masuk kelola KHDPK — proses pengajuan melalui Kementerian Kehutanan."}}},"docs":{}},
-  {"seq":5,"mitra":"PT Pesona Panorama Menoreh (Wisata Menoreh)","objek":"Wisata","pemroses":"KPH Kedu Sel","jenis_ks":"PKS Baru","pic":"MM","kategori":"Jasa Lingkungan (Wisata)","status":"In Progress","steps_done":["Permohonan"],"last_step":1,"current_step":"Pernyataan Minat","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"PT PPM menyampaikan permohonan MoU melalui surat Nomor 008/PPM-PHT/DK/Perm/I/2026.","tl":"Menunggu disposisi Plt Dirut sebagai dasar tindak lanjut."},"mei":{"progres":"Disposisi Dirut: Coba pertimbangkan/kaji kelayakannya. PT PPM sedang berkoordinasi dengan Kadivre Jateng.","tl":"Menunggu hasil rencana perubahan kebijakan."}}},"docs":{}},
-  {"seq":1,"mitra":"CV Anggrek Semeru","objek":"Tebu","pemroses":"Divre Jatim","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Divisi Bangbis telah review permohonan CV Anggrek Semeru di KPH Madiun.","tl":"Monitoring tanggapan kelengkapan dan perbaikan usulan dari Divre Jatim."},"mei":{"progres":"Berdasarkan hasil review FS masih terdapat hal-hal yang perlu diperbaiki: Penanggalan dokumen, Analisa Keuangan, Narasi Bank Garansi.","tl":"Penyusunan draft surat perbaikan ke Divisi Regional Jawa Tengah."}}},"docs":{}},
-  {"seq":2,"mitra":"PT Inhutani V","objek":"Tebu","pemroses":"","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan"],"last_step":1,"current_step":"Pernyataan Minat","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"Surat PT Inhutani V: Permohonan KS ATM di 2 lokasi: KPH Balapulang 10,40 Ha dan BKPH Nglambangan 105 Ha.","tl":"Koordinasi dengan IHT V terkait pelaksanaan cek lapangan."},"mei":{"progres":"Pemasukan dokumen penawaran dari PT Inhutani V, Daftar Pemasukan Dokumen Penawaran ditandatangani Kadiv Bangbis.","tl":"Review proposal bisnis PT Inhutani V untuk Negosiasi dan penyusunan Studi Kelayakan Bisnis."}}},"docs":{}},
-  {"seq":3,"mitra":"CV Wahana Multi Jaya","objek":"Tebu","pemroses":"Divre Jatim","jenis_ks":"PKS Baru","pic":"","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"mei":{"progres":"Usul permohonan BOD Meeting melalui surat Kadiv Bangbis Nomor 0084/ND/BANGBIS/2026 tanggal 08 Mei 2026.","tl":"Monitoring penyelenggaraan dan hasil BOD Meeting."}}},"docs":{}},
-  {"seq":4,"mitra":"PT Berkah Bumi Independen","objek":"Tanaman Sengon","pemroses":"Divre Jateng","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"mei":{"progres":"Usulan permohonan review draft PKS oleh Divisi Hukum dan Kepatuhan.","tl":"Monitoring usulan penerbitan Surat Kuasa Khusus (SKK)."}}},"docs":{}},
-  {"seq":5,"mitra":"CV Parta Redja Balsa","objek":"Tanaman Balsa","pemroses":"Divre Janten","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"mei":{"progres":"Monitoring hasil perbaikan dari Divre Janten.","tl":"Monitoring hasil perbaikan dari Divre Janten."}}},"docs":{}},
-  {"seq":6,"mitra":"PT Topaz Borneo Utama","objek":"Paulownia, Kelapa Bido, Cabe Jawa","pemroses":"Divre Janten","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Kawasan Tanaman Lainnya","status":"In Progress","steps_done":["Permohonan","Pernyataan Minat"],"last_step":2,"current_step":"Penyusunan KAK","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"mei":{"progres":"Permohonan diproses lebih lanjut oleh Divre Janten karena luas 30 Ha untuk pilot model.","tl":"Monitoring proses kerja sama oleh Divre Janten."}}},"docs":{}},
-  {"seq":1,"mitra":"PT Kiara Multi Lestari - Parung Panjang dan Kep Kangean","objek":"","pemroses":"Kanpus","jenis_ks":"NDA Baru","pic":"IV","kategori":"MOU/NDA/LOI Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","Rekomendasi","No SKK Dirut","Nomor PKS"],"last_step":13,"current_step":"Selesai","no_skk":"27/SKK/KUM/DIR/2025 Tanggal 22 Januari 2025","no_pks":"04/NDA/DIR-PHT/2025 Tanggal 23 Januari 2025","tahun":2026,"monthly":{},"docs":{}},
-  {"seq":2,"mitra":"Pemkab Rembang (MoU)","objek":"","pemroses":"Divre Jateng","jenis_ks":"MoU Baru","pic":"IV","kategori":"MOU/NDA/LOI Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","Rekomendasi","No SKK Dirut","Nomor PKS"],"last_step":13,"current_step":"Selesai","no_skk":"05/SKK/KUM/DIR/2025 Tanggal 6 Januari 2025","no_pks":"Belum terinfo dari Divre Jateng","tahun":2026,"monthly":{},"docs":{}},
-  {"seq":3,"mitra":"Pemkab Temanggung (MoU)","objek":"","pemroses":"Divre Jateng","jenis_ks":"MoU Baru","pic":"IV","kategori":"MOU/NDA/LOI Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","Rekomendasi","No SKK Dirut","Nomor PKS"],"last_step":13,"current_step":"Selesai","no_skk":"05/SKK/KUM/DIR/2025 Tanggal 6 Januari 2025","no_pks":"Belum terinfo dari Divre Jateng","tahun":2026,"monthly":{},"docs":{}},
-  {"seq":4,"mitra":"PT Geodipa Energi (Persero)","objek":"","pemroses":"Divre Jateng","jenis_ks":"MoU Baru","pic":"IV","kategori":"MOU/NDA/LOI Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","No SKK Dirut","Nomor PKS"],"last_step":13,"current_step":"Selesai","no_skk":"32/SKK/KUMDIR/2025 Tanggal 30 Januari 2025","no_pks":"Belum terinfo dari Divre Jateng","tahun":2026,"monthly":{},"docs":{}},
-  {"seq":1,"mitra":"PT Karunia Rejeki Abadi (Kayu Balsa dan Jabon KPH Banyuwangi Barat)","objek":"","pemroses":"Divre Jatim","jenis_ks":"PKS Baru","pic":"DR","kategori":"PKS Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS","Rekomendasi","Persetujuan Direksi/Dewas"],"last_step":13,"current_step":"Selesai","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
-  {"seq":2,"mitra":"PT Karunia Rejeki Abadi (Kayu Balsa - KPH Kediri)","objek":"","pemroses":"Divre Jatim","jenis_ks":"PKS Baru","pic":"DR","kategori":"PKS Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS","Rekomendasi","Persetujuan Direksi/Dewas"],"last_step":13,"current_step":"Selesai","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
-  {"seq":9,"mitra":"Pemkab Mojokerto dan LMDH Sri Rejeki (WW Jolotundo)","objek":"","pemroses":"KPH Pasuruan","jenis_ks":"Perpanjangan PKS","pic":"MM","kategori":"PKS Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan"],"last_step":13,"current_step":"Selesai","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
-  {"seq":10,"mitra":"Pemkab Bojonegoro (WW Kayangan Api)","objek":"","pemroses":"KPH Bjngro","jenis_ks":"Perpanjangan PKS","pic":"MM","kategori":"PKS Telah Ditandatangani","status":"Selesai","steps_done":["Permohonan"],"last_step":13,"current_step":"Selesai","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
-  {"seq":1,"mitra":"PT Wahyu Putra Sejati (Sagara View)","objek":"","pemroses":"Divre Jateng","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Tidak Berlanjut/Batal/Berakhir","status":"Tidak Berlanjut","steps_done":["Permohonan","Penyusunan FS"],"last_step":9,"current_step":"Rekomendasi","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
-  {"seq":2,"mitra":"PT Jasamarga Ngawi Kertosono Kediri PT","objek":"","pemroses":"Kanpus","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Tidak Berlanjut/Batal/Berakhir","status":"Tidak Berlanjut","steps_done":["Permohonan"],"last_step":1,"current_step":"Pernyataan Minat","no_skk":"","no_pks":"","tahun":2026,"monthly":{},"docs":{}},
-  {"seq":11,"mitra":"PT Sintesa Wira Energi","objek":"Biomassa","pemroses":"","jenis_ks":"PKS Baru","pic":"ABM","kategori":"Tidak Berlanjut/Batal/Berakhir","status":"Tidak Berlanjut","steps_done":["Permohonan"],"last_step":1,"current_step":"Pernyataan Minat","no_skk":"","no_pks":"","tahun":2026,"monthly":{"2026":{"jan":{"progres":"PT Sintesa Wira Energi bersama Tim Divre Jateng dan KPH Pati melaksanakan survei lapangan 17-22 Desember 2025.","tl":"Monitoring laporan Studi Potensi Kerja Sama dari PT Sintesa Wira Energi."},"apr":{"progres":"Belum ada informasi kembali terkait kelanjutan permohonan kerja sama.","tl":"Komunikasi kembali kepada PT SWE terkait kelanjutan permohonan."}}},"docs":{}}
-];
+// DATA dimuat sepenuhnya dari Google Sheets lewat loadFromSheets() saat
+// aplikasi dibuka (lihat initApp() di akhir file). Array ini SENGAJA
+// dikosongkan — tidak ada lagi data contoh/hardcode tertulis di kode.
+let DATA = [];
 
 const STEPS_ALL = ["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS","Rekomendasi","Persetujuan Direksi/Dewas","No SKK Dirut","Nomor PKS"];
 const MONTH_KEYS = ["jan","feb","mar","apr","mei","jun","jul","agu","sep","okt","nov","des"];
@@ -1002,6 +990,7 @@ function getAvailableYears() {
   const years = new Set([...manualYears]);
   DATA.forEach(d => {
     if (d.tahun) years.add(parseInt(d.tahun));
+    if (d.tahun_ttd) years.add(parseInt(d.tahun_ttd));
     if (d.monthly) Object.keys(d.monthly).forEach(y => years.add(parseInt(y)));
   });
   years.add(currentYear); // selalu sertakan tahun aktif
@@ -1055,11 +1044,11 @@ function latestMonthly(d) {
 
 // ==================== STATS ====================
 function updateStats() {
-  const yearData = DATA.filter(d => (d.tahun || 2026) === currentYear || (d.monthly && d.monthly[currentYear]));
-  const all = DATA.length;
-  const ip = DATA.filter(d => d.status === 'In Progress').length;
-  const done = DATA.filter(d => d.status === 'Selesai').length;
-  const batal = DATA.filter(d => d.status === 'Tidak Berlanjut').length;
+  const yearData = dataForYear(currentYear);
+  const all = yearData.length;
+  const ip = yearData.filter(d => d.status === 'In Progress').length;
+  const done = yearData.filter(d => d.status === 'Selesai').length;
+  const batal = yearData.filter(d => d.status === 'Tidak Berlanjut').length;
   document.getElementById('cnt-all').textContent = all;
   document.getElementById('cnt-inprogress').textContent = ip;
   document.getElementById('cnt-selesai').textContent = done;
@@ -1090,6 +1079,31 @@ function applyFilters() {
   });
 }
 
+// ==================== FILTER TAHUN PER KATEGORI ====================
+// Kategori yang berarti "sudah ditandatangani" — begitu PKS/MoU/NDA/LOI
+// resmi ditandatangani, kerja sama itu SELESAI di tahun penandatanganan
+// (tahun_ttd) dan TIDAK ikut "berjalan terus" muncul di tab tahun-tahun
+// berikutnya. Kategori lain (masih berproses/belum tandatangan) tetap
+// muncul di tab tahun aktif selama prosesnya berjalan.
+const KATEGORI_SUDAH_TTD = ['PKS Telah Ditandatangani', 'MOU/NDA/LOI Telah Ditandatangani'];
+
+function isVisibleInYear(d, year) {
+  if (KATEGORI_SUDAH_TTD.includes(d.kategori)) {
+    // Hanya tampil di tab tahun yang SAMA dengan tahun TTD-nya.
+    // Jika tahun_ttd belum diisi, fallback ke field 'tahun' agar mitra
+    // tidak "hilang" dari semua tab sebelum tahun_ttd dilengkapi.
+    const effectiveYear = d.tahun_ttd || d.tahun;
+    return String(effectiveYear) === String(year);
+  }
+  // Kategori masih berproses: tampil di tab tahun aktif seperti biasa
+  // (berdasarkan field 'tahun', atau jika ada progres bulanan di tahun itu).
+  return String(d.tahun || 2026) === String(year) || (d.monthly && d.monthly[year]);
+}
+
+function dataForYear(year) {
+  return DATA.filter(d => isVisibleInYear(d, year));
+}
+
 // ==================== LIST BUILD ====================
 // Kategori tetap (urutan dan label pasti)
 const FIXED_CATEGORIES = [
@@ -1102,12 +1116,13 @@ const FIXED_CATEGORIES = [
 
 function buildList() {
   const panel = document.getElementById('list-panel');
+  const yearData = dataForYear(currentYear);
   // Gabungkan kategori tetap + kategori dari data yang belum ada di list tetap
-  const extraCats = [...new Set(DATA.map(d => d.kategori))].filter(c => !FIXED_CATEGORIES.includes(c));
+  const extraCats = [...new Set(yearData.map(d => d.kategori))].filter(c => !FIXED_CATEGORIES.includes(c));
   const categories = [...FIXED_CATEGORIES, ...extraCats];
   let html = '';
   categories.forEach(cat => {
-    const items = DATA.filter(d => d.kategori === cat);
+    const items = yearData.filter(d => d.kategori === cat);
     html += `<div class="category-header">
       <span>${cat} <span class="cat-count">${items.length}</span></span>
       <button class="btn-add-in-cat" onclick="openAddMitraInCat('${cat.replace(/'/g,"\'")}')">＋ Tambah</button>
@@ -1140,11 +1155,12 @@ function buildList() {
 // ==================== TABLE BUILD ====================
 function buildTable() {
   const tbody = document.getElementById('table-body');
-  const categories = [...new Set(DATA.map(d => d.kategori))];
+  const yearData = dataForYear(currentYear);
+  const categories = [...new Set(yearData.map(d => d.kategori))];
   let html = ''; let n = 1;
   categories.forEach(cat => {
     html += `<tr class="cat-divider"><td colspan="10">${cat}</td></tr>`;
-    DATA.filter(d => d.kategori === cat).forEach(d => {
+    yearData.filter(d => d.kategori === cat).forEach(d => {
       const pct = Math.round((d.last_step / 13) * 100);
       const latest = latestMonthly(d);
       html += `<tr>
@@ -1245,6 +1261,7 @@ function renderDetail(d) {
         <div class="meta-item"><span class="meta-key">Jenis Kerja Sama</span><span class="meta-val ${d.jenis_ks?'':'empty'}">${d.jenis_ks||'—'}</span></div>
         <div class="meta-item"><span class="meta-key">No SKK Dirut</span><span class="meta-val code ${d.no_skk?'':'empty'}">${d.no_skk||'—'}</span></div>
         <div class="meta-item"><span class="meta-key">Nomor Perjanjian</span><span class="meta-val code ${d.no_pks?'':'empty'}">${d.no_pks||'—'}</span></div>
+        ${KATEGORI_SUDAH_TTD.includes(d.kategori) ? `<div class="meta-item"><span class="meta-key">Tahun TTD PKS/MoU</span><span class="meta-val ${d.tahun_ttd?'':'empty'}">${d.tahun_ttd||'Belum diisi'}</span></div>` : ''}
       </div>
 
       <div class="steps-track">
@@ -1476,10 +1493,24 @@ function populateStepChecks(stepsDone) {
   const grid = document.getElementById('steps-check-grid');
   grid.innerHTML = STEPS_ALL.map((s, i) =>
     `<label class="step-check-item">
-      <input type="checkbox" name="step" value="${s}" ${(stepsDone||[]).includes(s)?'checked':''}>
+      <input type="checkbox" name="step" value="${s}" ${(stepsDone||[]).includes(s)?'checked':''} ${s==='Nomor PKS'?'onchange="onNomorPksToggle()"':''}>
       <span>${s}</span>
     </label>`
   ).join('');
+  // Sinkronkan status field Tahun TTD dengan kondisi checkbox saat modal dibuka
+  onNomorPksToggle();
+}
+
+// Field "Tahun TTD PKS/MoU" hanya aktif (bisa dipilih) ketika tahap
+// "Nomor PKS" sudah dicentang — selaras dengan aturan bahwa tahun TTD
+// hanya bermakna setelah PKS/MoU benar-benar ditandatangani (ditandai
+// dengan tercentangnya tahap terakhir ini).
+function onNomorPksToggle() {
+  const checkbox = document.querySelector('#steps-check-grid input[value="Nomor PKS"]');
+  const sel = document.getElementById('f-tahun-ttd');
+  const isChecked = checkbox && checkbox.checked;
+  sel.disabled = !isChecked;
+  if (!isChecked) sel.value = ''; // kosongkan kalau tahap dibatalkan centangnya
 }
 
 function populateStepSelect(currentStep) {
@@ -1495,6 +1526,16 @@ function populateYearSelect(selId, selectedYear) {
   sel.innerHTML = years.map(y => `<option value="${y}" ${y===selectedYear?'selected':''}>${y}</option>`).join('');
 }
 
+// Versi dengan opsi placeholder kosong di awal — untuk field opsional
+// seperti "Tahun TTD PKS/MoU" yang boleh belum diisi.
+function populateYearSelectOptional(selId, selectedYear) {
+  const sel = document.getElementById(selId);
+  const years = [];
+  for (let y = 2023; y <= new Date().getFullYear() + 3; y++) years.push(y);
+  sel.innerHTML = '<option value="">— Pilih tahun —</option>' +
+    years.map(y => `<option value="${y}" ${String(y)===String(selectedYear)?'selected':''}>${y}</option>`).join('');
+}
+
 function openAddMitra(presetKategori) {
   document.getElementById('modal-mitra-title').textContent = 'Tambah Mitra Baru';
   document.getElementById('edit-idx').value = '';
@@ -1505,8 +1546,9 @@ function openAddMitra(presetKategori) {
   document.getElementById('f-kategori').value = presetKategori || '';
   document.getElementById('f-status').value = 'In Progress';
   populateYearSelect('f-tahun', currentYear);
+  populateYearSelectOptional('f-tahun-ttd', '');
   populateStepSelect('Permohonan');
-  populateStepChecks([]);
+  populateStepChecks([]); // turut memanggil onNomorPksToggle() → field tahun_ttd otomatis disabled
   openModal('modal-mitra');
 }
 
@@ -1534,8 +1576,9 @@ function openEditMitra(idx) {
   document.getElementById('f-no-skk').value = d.no_skk || '';
   document.getElementById('f-no-pks').value = d.no_pks || '';
   populateYearSelect('f-tahun', d.tahun || currentYear);
+  populateYearSelectOptional('f-tahun-ttd', d.tahun_ttd || '');
   populateStepSelect(d.current_step);
-  populateStepChecks(d.steps_done);
+  populateStepChecks(d.steps_done); // turut memanggil onNomorPksToggle() sesuai status checkbox saat ini
   openModal('modal-mitra');
 }
 
@@ -1550,6 +1593,17 @@ function saveMitra() {
   const last_step = STEPS_ALL.indexOf(currentStep) !== -1 ? STEPS_ALL.indexOf(currentStep) : (currentStep === 'Selesai' ? 13 : 0);
   const tahun = parseInt(document.getElementById('f-tahun').value);
 
+  // Tahun TTD PKS/MoU — hanya bermakna jika tahap "Nomor PKS" sudah dicentang.
+  // Field-nya disabled di UI saat belum dicentang, jadi nilainya otomatis kosong.
+  const nomorPksChecked = stepsDone.includes('Nomor PKS');
+  const tahunTtdRaw = document.getElementById('f-tahun-ttd').value;
+  const tahun_ttd = nomorPksChecked && tahunTtdRaw ? parseInt(tahunTtdRaw) : '';
+  if (nomorPksChecked && !tahunTtdRaw) {
+    // Sekadar peringatan — tidak menghalangi penyimpanan, sesuai keputusan:
+    // boleh diisi belakangan setelah data tersimpan.
+    showToast('⚠️ Tahap "Nomor PKS" sudah dicentang tapi Tahun TTD belum diisi — mitra ini belum akan muncul khusus di tab tahun TTD sampai diisi.');
+  }
+
   if (idxVal === '') {
     // INSERT: data baru
     const obj = {
@@ -1563,7 +1617,7 @@ function saveMitra() {
       no_skk: document.getElementById('f-no-skk').value.trim(),
       no_pks: document.getElementById('f-no-pks').value.trim(),
       steps_done: stepsDone, last_step, current_step: currentStep,
-      tahun, monthly: {}, docs: {}
+      tahun, tahun_ttd, monthly: {}, docs: {}
     };
     DATA.push(obj);
     showToast('✅ Mitra berhasil ditambahkan!');
@@ -1587,6 +1641,7 @@ function saveMitra() {
       last_step,
       current_step: currentStep,
       tahun,
+      tahun_ttd,
     };
     showToast('✅ Data mitra berhasil diperbarui!');
     selectItem(idx);
@@ -2436,7 +2491,7 @@ deleteDoc = function(idx, step, di) {
     window._appsScriptUrl = saved;
   }
 })();
-
+  
 async function saveSettingsUrl() {
   const url = document.getElementById('settings-url').value.trim();
   if (!url || !url.startsWith('https://script.google.com')) {
