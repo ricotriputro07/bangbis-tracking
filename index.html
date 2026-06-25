@@ -968,7 +968,7 @@ shakeStyle.textContent = `@keyframes shake {
   0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)}
 }`;
 document.head.appendChild(shakeStyle);
-  
+
 // ==================== DATA ====================
 // DATA dimuat sepenuhnya dari Google Sheets lewat loadFromSheets() saat
 // aplikasi dibuka (lihat initApp() di akhir file). Array ini SENGAJA
@@ -1142,9 +1142,29 @@ function isVisibleInYear(d, year) {
     const effectiveYear = d.tahun_ttd || d.tahun;
     return String(effectiveYear) === String(year);
   }
-  // Kategori masih berproses: tampil di tab tahun aktif seperti biasa
-  // (berdasarkan field 'tahun', atau jika ada progres bulanan di tahun itu).
-  return String(d.tahun || 2026) === String(year) || (d.monthly && d.monthly[year]);
+
+  const mitraTahun = parseInt(d.tahun) || 2026;
+  const targetYear = parseInt(year);
+
+  if (d.status === 'Tidak Berlanjut') {
+    // Tidak berlanjut/batal: hanya muncul tepat di tahun field-nya,
+    // tidak ikut "berjalan terus" ke tahun-tahun setelahnya.
+    return mitraTahun === targetYear;
+  }
+
+  // Masih berproses (In Progress) dan belum tandatangan: tetap dianggap
+  // "berjalan" mulai dari tahun field-nya sampai tahun sekarang/berjalan —
+  // jadi tampil di SETIAP tab tahun dalam rentang itu, bukan hanya tahun
+  // yang sama persis. Ini mencegah mitra "hilang" dari tab tahun-tahun
+  // di antaranya hanya karena belum punya laporan bulanan di tahun itu.
+  const thisYear = new Date().getFullYear();
+  const upperBound = Math.max(thisYear, mitraTahun);
+  if (targetYear >= mitraTahun && targetYear <= upperBound) return true;
+
+  // Tetap pertahankan kompatibilitas: jika ada laporan bulanan tercatat
+  // di tahun tertentu (mis. tahun yang lebih baru dari upperBound di atas
+  // karena tanggal sistem berubah), mitra tetap muncul di tahun itu.
+  return !!(d.monthly && d.monthly[year]);
 }
 
 function dataForYear(year) {
