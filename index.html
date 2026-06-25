@@ -133,7 +133,7 @@
   .main { display: flex; height: calc(100vh - 175px); overflow: hidden; }
 
   /* LIST PANEL */
-  .list-panel { width: 400px; min-width: 300px; border-right: 1px solid var(--border); overflow-y: auto; background: white; }
+  .list-panel { width: 400px; min-width: 300px; border-right: 1px solid var(--border); overflow-y: auto; background: white; padding-bottom: 64px; }
   .category-header { padding: 7px 14px; background: var(--forest); color: white; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; }
   .cat-count { background: rgba(255,255,255,0.2); padding: 1px 7px; border-radius: 10px; font-size: 10px; }
   .btn-add-in-cat { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 2px 9px; border-radius: 10px; font-size: 10px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
@@ -254,7 +254,7 @@
   .meta-val.empty { color: var(--gray); font-style: italic; font-weight: 400; }
 
   /* TABLE VIEW */
-  .table-view { display: none; padding: 14px; overflow-x: auto; }
+  .table-view { display: none; padding: 14px 14px 64px 14px; overflow-x: auto; }
   .table-view.active { display: block; }
   table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
   thead tr { background: var(--forest); color: white; }
@@ -268,7 +268,7 @@
   .cat-divider td { background: var(--forest); color: white; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; padding: 5px 12px; }
 
   /* DASHBOARD VIEW */
-  .dashboard-view { display: none; padding: 16px; overflow-y: auto; height: calc(100vh - 175px); }
+  .dashboard-view { display: none; padding: 16px 16px 64px 16px; overflow-y: auto; height: calc(100vh - 175px); }
   .dashboard-view.active { display: block; }
   .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
   .dash-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
@@ -334,9 +334,12 @@
   .month-tab.active { background: var(--forest); color: white; border-color: var(--forest); }
   .toast { position: fixed; bottom: 20px; right: 20px; background: var(--forest); color: white; padding: 10px 18px; border-radius: 8px; font-size: 12px; font-weight: 600; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.2); animation: slideIn 0.3s ease; }
   @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--paper); }
+  ::-webkit-scrollbar-thumb { background: var(--sage); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--leaf); }
+  /* Firefox */
+  * { scrollbar-width: thin; scrollbar-color: var(--sage) var(--paper); }
 </style>
 </head>
 <body>
@@ -2580,6 +2583,7 @@ deleteDoc = function(idx, step, di) {
     window._appsScriptUrl = saved;
   }
 })();
+
 
 async function saveSettingsUrl() {
   const url = document.getElementById('settings-url').value.trim();
