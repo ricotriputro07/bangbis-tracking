@@ -571,6 +571,17 @@
           </select>
         </div>
         <div class="form-group">
+          <label class="form-label">Kewenangan Persetujuan</label>
+          <select class="form-select" id="f-kewenangan" onchange="onJenisKsChange()">
+            <option value="">— pilih —</option>
+            <option>Direksi</option>
+            <option>Dewas</option>
+            <option>Menteri</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
           <label class="form-label">Kategori</label>
           <select class="form-select" id="f-kategori">
             <option value="">— pilih —</option>
@@ -581,8 +592,6 @@
             <option>Tidak Berlanjut/Batal/Berakhir</option>
           </select>
         </div>
-      </div>
-      <div class="form-row">
         <div class="form-group">
           <label class="form-label">Status</label>
           <select class="form-select" id="f-status">
@@ -591,6 +600,8 @@
             <option value="Tidak Berlanjut">Tidak Berlanjut</option>
           </select>
         </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
           <label class="form-label">Tahap Saat Ini</label>
           <select class="form-select" id="f-current-step"></select>
@@ -609,7 +620,7 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Tahun TTD PKS/MoU <span id="f-tahun-ttd-hint" style="color:var(--muted);font-weight:400">(aktif setelah tahap "Nomor PKS" dicentang)</span></label>
+          <label class="form-label">Tahun TTD PKS/MoU <span id="f-tahun-ttd-hint" style="color:var(--muted);font-weight:400">(aktif setelah tahap "Terbit PKS" dicentang)</span></label>
           <select class="form-select" id="f-tahun-ttd" disabled>
             <option value="">— Pilih tahun —</option>
           </select>
@@ -978,7 +989,12 @@ document.head.appendChild(shakeStyle);
 // dikosongkan — tidak ada lagi data contoh/hardcode tertulis di kode.
 let DATA = [];
 
-const STEPS_ALL = ["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS","Rekomendasi","Persetujuan Direksi/Dewas","No SKK Dirut","Nomor PKS"];
+// STEPS_ALL berisi SEMUA kemungkinan tahap, termasuk ketiga jenis tahap
+// persetujuan (Direksi/Dewas/Menteri) secara terpisah. Untuk satu mitra,
+// hanya SUBSET dari daftar ini yang relevan — ditentukan oleh kombinasi
+// "Jenis Kerja Sama" (titik mulai) dan "Kewenangan Persetujuan" (sampai
+// mana jenjang persetujuan yang dilewati). Lihat getStepsForJenis() di bawah.
+const STEPS_ALL = ["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS","Rekomendasi","Persetujuan Direksi","Persetujuan Dewas","Persetujuan Menteri","Terbit SKK","Terbit PKS"];
 
 // ==================== FLOW TAHAPAN PER SKEMA PERMOHONAN ====================
 // Dropdown "Jenis Kerja Sama" menampilkan 6 varian penulisan apa adanya
@@ -998,15 +1014,39 @@ const JENIS_KS_START_STEP = {
   'NDA Baru':                      'Rekomendasi',
 };
 
-// Mengembalikan subset STEPS_ALL yang relevan untuk suatu jenis kerja sama.
-// Jika jenis_ks tidak dikenali/kosong (mis. data lama), kembalikan STEPS_ALL
-// penuh sebagai fallback aman agar data lama tidak "kehilangan" tahapannya.
-function getStepsForJenis(jenisKs) {
+// ==================== JENJANG PERSETUJUAN ====================
+// "Kewenangan Persetujuan" menentukan sampai mana jenjang yang dilalui
+// SETELAH tahap "Rekomendasi", sebelum lanjut ke "Terbit SKK"/"Terbit PKS":
+//   - Direksi → ...Rekomendasi → Persetujuan Direksi → Terbit SKK → Terbit PKS
+//   - Dewas   → ...Rekomendasi → Persetujuan Direksi → Persetujuan Dewas → Terbit SKK → Terbit PKS
+//   - Menteri → ...Rekomendasi → Persetujuan Direksi → Persetujuan Dewas → Persetujuan Menteri → Terbit SKK → Terbit PKS
+const KEWENANGAN_STEPS = {
+  'Direksi': ['Persetujuan Direksi'],
+  'Dewas':   ['Persetujuan Direksi', 'Persetujuan Dewas'],
+  'Menteri': ['Persetujuan Direksi', 'Persetujuan Dewas', 'Persetujuan Menteri'],
+};
+const ALL_APPROVAL_STEPS = ['Persetujuan Direksi', 'Persetujuan Dewas', 'Persetujuan Menteri'];
+
+// Mengembalikan urutan tahap final yang relevan untuk suatu mitra, hasil
+// kombinasi titik mulai (dari jenis_ks) dan jenjang persetujuan (dari
+// kewenangan). Tahap-tahap persetujuan yang tidak relevan (di atas jenjang
+// yang dipilih) DIHILANGKAN dari urutan — bukan sekadar diabaikan — supaya
+// checklist & progress benar-benar mencerminkan jenjang yang berlaku.
+//
+// Fallback aman untuk data lama: jenis_ks tidak dikenali → mulai dari awal
+// (STEPS_ALL sebelum tahap persetujuan); kewenangan tidak dikenali/kosong →
+// default ke jenjang "Menteri" (jenjang paling lengkap) agar tidak ada
+// histori steps_done yang "hilang" karena tahapnya disaring keluar.
+function getStepsForJenis(jenisKs, kewenangan) {
   const startStep = JENIS_KS_START_STEP[jenisKs];
-  if (!startStep) return STEPS_ALL;
-  const startIdx = STEPS_ALL.indexOf(startStep);
-  if (startIdx === -1) return STEPS_ALL;
-  return STEPS_ALL.slice(startIdx);
+  const startIdx = startStep ? STEPS_ALL.indexOf(startStep) : 0;
+  const base = STEPS_ALL.slice(startIdx === -1 ? 0 : startIdx);
+
+  const approvalSteps = KEWENANGAN_STEPS[kewenangan] || ALL_APPROVAL_STEPS;
+  // Buang semua step persetujuan dari base, lalu susun ulang dengan hanya
+  // jenjang yang relevan (base sudah dalam urutan STEPS_ALL yang benar,
+  // jadi cukup filter, tidak perlu re-sort).
+  return base.filter(s => !ALL_APPROVAL_STEPS.includes(s) || approvalSteps.includes(s));
 }
 
 // Helper terpusat: progress tahapan suatu mitra RELATIF terhadap flow
@@ -1014,7 +1054,7 @@ function getStepsForJenis(jenisKs) {
 // 100% benar-benar berarti "selesai sesuai skema", dan dot tahapan yang
 // ditampilkan hanya yang relevan untuk skema mitra tersebut.
 function getStepProgress(d) {
-  const steps = getStepsForJenis(d.jenis_ks);
+  const steps = getStepsForJenis(d.jenis_ks, d.kewenangan);
   const stepsDone = d.steps_done || [];
   const doneCount = steps.filter(s => stepsDone.includes(s)).length;
   const totalCount = steps.length;
@@ -1329,6 +1369,7 @@ function renderDetail(d) {
       <div class="meta-grid">
         <div class="meta-item"><span class="meta-key">Pemroses</span><span class="meta-val ${d.pemroses?'':'empty'}">${d.pemroses||'—'}</span></div>
         <div class="meta-item"><span class="meta-key">Jenis Kerja Sama</span><span class="meta-val ${d.jenis_ks?'':'empty'}">${d.jenis_ks||'—'}</span></div>
+        <div class="meta-item"><span class="meta-key">Kewenangan Persetujuan</span><span class="meta-val ${d.kewenangan?'':'empty'}">${d.kewenangan||'—'}</span></div>
         <div class="meta-item"><span class="meta-key">No SKK Dirut</span><span class="meta-val code ${d.no_skk?'':'empty'}">${d.no_skk||'—'}</span></div>
         <div class="meta-item"><span class="meta-key">Nomor Perjanjian</span><span class="meta-val code ${d.no_pks?'':'empty'}">${d.no_pks||'—'}</span></div>
         ${KATEGORI_SUDAH_TTD.includes(d.kategori) ? `<div class="meta-item"><span class="meta-key">Tahun TTD PKS/MoU</span><span class="meta-val ${d.tahun_ttd?'':'empty'}">${d.tahun_ttd||'Belum diisi'}</span></div>` : ''}
@@ -1362,7 +1403,7 @@ function getLatestMonthKey(yearData) {
 }
 
 function buildDocsHtml(d, idx) {
-  const steps = getStepsForJenis(d.jenis_ks);
+  const steps = getStepsForJenis(d.jenis_ks, d.kewenangan);
   // Hitung total dokumen tahapan yang relevan untuk skema mitra ini
   const totalDocs = d.docs ? steps.reduce((s, step) => s + ((d.docs[step] || []).length), 0) : 0;
 
@@ -1560,47 +1601,49 @@ function buildDonut(ip, done, batal, total) {
 }
 
 // ==================== MODAL: ADD/EDIT MITRA ====================
-function populateStepChecks(stepsDone, jenisKs) {
+function populateStepChecks(stepsDone, jenisKs, kewenangan) {
   const grid = document.getElementById('steps-check-grid');
-  const steps = getStepsForJenis(jenisKs);
+  const steps = getStepsForJenis(jenisKs, kewenangan);
   grid.innerHTML = steps.map((s, i) =>
     `<label class="step-check-item">
-      <input type="checkbox" name="step" value="${s}" ${(stepsDone||[]).includes(s)?'checked':''} ${s==='Nomor PKS'?'onchange="onNomorPksToggle()"':''}>
+      <input type="checkbox" name="step" value="${s}" ${(stepsDone||[]).includes(s)?'checked':''} ${s==='Terbit PKS'?'onchange="onTerbitPksToggle()"':''}>
       <span>${s}</span>
     </label>`
   ).join('');
   // Sinkronkan status field Tahun TTD dengan kondisi checkbox saat modal dibuka
-  onNomorPksToggle();
+  onTerbitPksToggle();
 }
 
-// Dipanggil saat dropdown "Jenis Kerja Sama" berubah — checklist & dropdown
-// tahap di-render ulang agar hanya menampilkan tahapan yang relevan untuk
-// skema yang baru dipilih. Centang yang sudah ada untuk tahap yang masih
-// relevan dipertahankan; tahap yang tidak lagi relevan (di luar flow skema
-// baru) otomatis tidak ditampilkan lagi.
+// Dipanggil saat dropdown "Jenis Kerja Sama" ATAU "Kewenangan Persetujuan"
+// berubah — checklist & dropdown tahap di-render ulang agar hanya
+// menampilkan tahapan yang relevan untuk kombinasi skema + jenjang
+// persetujuan yang baru dipilih. Centang yang sudah ada untuk tahap yang
+// masih relevan dipertahankan; tahap yang tidak lagi relevan (di luar
+// flow baru) otomatis tidak ditampilkan lagi.
 function onJenisKsChange() {
   const jenisKs = document.getElementById('f-jenis').value;
+  const kewenangan = document.getElementById('f-kewenangan').value;
   const stepsDone = [...document.querySelectorAll('#steps-check-grid input:checked')].map(el => el.value);
   const currentStepSel = document.getElementById('f-current-step').value;
-  populateStepChecks(stepsDone, jenisKs);
-  populateStepSelect(currentStepSel, jenisKs);
+  populateStepChecks(stepsDone, jenisKs, kewenangan);
+  populateStepSelect(currentStepSel, jenisKs, kewenangan);
 }
 
 // Field "Tahun TTD PKS/MoU" hanya aktif (bisa dipilih) ketika tahap
-// "Nomor PKS" sudah dicentang — selaras dengan aturan bahwa tahun TTD
+// "Terbit PKS" sudah dicentang — selaras dengan aturan bahwa tahun TTD
 // hanya bermakna setelah PKS/MoU benar-benar ditandatangani (ditandai
 // dengan tercentangnya tahap terakhir ini).
-function onNomorPksToggle() {
-  const checkbox = document.querySelector('#steps-check-grid input[value="Nomor PKS"]');
+function onTerbitPksToggle() {
+  const checkbox = document.querySelector('#steps-check-grid input[value="Terbit PKS"]');
   const sel = document.getElementById('f-tahun-ttd');
   const isChecked = checkbox && checkbox.checked;
   sel.disabled = !isChecked;
   if (!isChecked) sel.value = ''; // kosongkan kalau tahap dibatalkan centangnya
 }
 
-function populateStepSelect(currentStep, jenisKs) {
+function populateStepSelect(currentStep, jenisKs, kewenangan) {
   const sel = document.getElementById('f-current-step');
-  const steps = getStepsForJenis(jenisKs);
+  const steps = getStepsForJenis(jenisKs, kewenangan);
   // Jika currentStep tidak ada di flow skema baru (mis. ganti skema setelah
   // sebelumnya di tahap yang sudah tidak relevan), fallback ke tahap pertama
   // flow yang baru agar dropdown tidak menunjukkan opsi yang tidak ada.
@@ -1633,14 +1676,15 @@ function openAddMitra(presetKategori) {
   ['f-mitra','f-objek','f-pemroses','f-no-skk','f-no-pks'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-pic').value = '';
   document.getElementById('f-jenis').value = '';
+  document.getElementById('f-kewenangan').value = '';
   document.getElementById('f-kategori').value = presetKategori || '';
   document.getElementById('f-status').value = 'In Progress';
   populateYearSelect('f-tahun', currentYear);
   populateYearSelectOptional('f-tahun-ttd', '');
-  // Belum ada jenis_ks dipilih → tampilkan flow lengkap (STEPS_ALL) dulu;
+  // Belum ada jenis_ks/kewenangan dipilih → tampilkan flow lengkap dulu;
   // begitu user memilih skema, onJenisKsChange() akan mempersempit otomatis.
-  populateStepSelect('Permohonan', '');
-  populateStepChecks([], ''); // turut memanggil onNomorPksToggle() → field tahun_ttd otomatis disabled
+  populateStepSelect('Permohonan', '', '');
+  populateStepChecks([], '', ''); // turut memanggil onTerbitPksToggle() → field tahun_ttd otomatis disabled
   openModal('modal-mitra');
 }
 
@@ -1663,14 +1707,15 @@ function openEditMitra(idx) {
   document.getElementById('f-pemroses').value = d.pemroses || '';
   document.getElementById('f-pic').value = d.pic || '';
   document.getElementById('f-jenis').value = d.jenis_ks || '';
+  document.getElementById('f-kewenangan').value = d.kewenangan || '';
   document.getElementById('f-kategori').value = d.kategori || '';
   document.getElementById('f-status').value = d.status || 'In Progress';
   document.getElementById('f-no-skk').value = d.no_skk || '';
   document.getElementById('f-no-pks').value = d.no_pks || '';
   populateYearSelect('f-tahun', d.tahun || currentYear);
   populateYearSelectOptional('f-tahun-ttd', d.tahun_ttd || '');
-  populateStepSelect(d.current_step, d.jenis_ks);
-  populateStepChecks(d.steps_done, d.jenis_ks); // turut memanggil onNomorPksToggle() sesuai status checkbox saat ini
+  populateStepSelect(d.current_step, d.jenis_ks, d.kewenangan);
+  populateStepChecks(d.steps_done, d.jenis_ks, d.kewenangan); // turut memanggil onTerbitPksToggle() sesuai status checkbox saat ini
   openModal('modal-mitra');
 }
 
@@ -1682,18 +1727,19 @@ function saveMitra() {
   if (!kategori) { alert('Kategori harus dipilih.'); return; }
   const stepsDone = [...document.querySelectorAll('#steps-check-grid input:checked')].map(el => el.value);
   const currentStep = document.getElementById('f-current-step').value;
-  const last_step = STEPS_ALL.indexOf(currentStep) !== -1 ? STEPS_ALL.indexOf(currentStep) : (currentStep === 'Selesai' ? 13 : 0);
+  const last_step = STEPS_ALL.indexOf(currentStep) !== -1 ? STEPS_ALL.indexOf(currentStep) : (currentStep === 'Selesai' ? STEPS_ALL.length : 0);
   const tahun = parseInt(document.getElementById('f-tahun').value);
+  const kewenangan = document.getElementById('f-kewenangan').value;
 
-  // Tahun TTD PKS/MoU — hanya bermakna jika tahap "Nomor PKS" sudah dicentang.
+  // Tahun TTD PKS/MoU — hanya bermakna jika tahap "Terbit PKS" sudah dicentang.
   // Field-nya disabled di UI saat belum dicentang, jadi nilainya otomatis kosong.
-  const nomorPksChecked = stepsDone.includes('Nomor PKS');
+  const terbitPksChecked = stepsDone.includes('Terbit PKS');
   const tahunTtdRaw = document.getElementById('f-tahun-ttd').value;
-  const tahun_ttd = nomorPksChecked && tahunTtdRaw ? parseInt(tahunTtdRaw) : '';
-  if (nomorPksChecked && !tahunTtdRaw) {
+  const tahun_ttd = terbitPksChecked && tahunTtdRaw ? parseInt(tahunTtdRaw) : '';
+  if (terbitPksChecked && !tahunTtdRaw) {
     // Sekadar peringatan — tidak menghalangi penyimpanan, sesuai keputusan:
     // boleh diisi belakangan setelah data tersimpan.
-    showToast('⚠️ Tahap "Nomor PKS" sudah dicentang tapi Tahun TTD belum diisi — mitra ini belum akan muncul khusus di tab tahun TTD sampai diisi.');
+    showToast('⚠️ Tahap "Terbit PKS" sudah dicentang tapi Tahun TTD belum diisi — mitra ini belum akan muncul khusus di tab tahun TTD sampai diisi.');
   }
 
   if (idxVal === '') {
@@ -1704,6 +1750,7 @@ function saveMitra() {
       pemroses: document.getElementById('f-pemroses').value.trim(),
       pic: document.getElementById('f-pic').value,
       jenis_ks: document.getElementById('f-jenis').value,
+      kewenangan,
       kategori,
       status: document.getElementById('f-status').value,
       no_skk: document.getElementById('f-no-skk').value.trim(),
@@ -1725,6 +1772,7 @@ function saveMitra() {
       pemroses: document.getElementById('f-pemroses').value.trim(),
       pic: document.getElementById('f-pic').value,
       jenis_ks: document.getElementById('f-jenis').value,
+      kewenangan,
       kategori,
       status: document.getElementById('f-status').value,
       no_skk: document.getElementById('f-no-skk').value.trim(),
