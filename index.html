@@ -702,7 +702,7 @@
           <div style="font-size:11px;color:#1c2b22;line-height:1.55">
             Upload dokumen pada tahapan kerja sama hanya menerima format <strong>PDF (.pdf)</strong>.<br>
             Pastikan dokumen sudah dalam format PDF sebelum diupload.<br>
-            <span style="color:#6b8f71">Ukuran maksimal: 10 MB per file.</span>
+            <span style="color:#6b8f71">Ukuran maksimal: 20 MB per file.</span>
           </div>
         </div>
       </div>
@@ -754,7 +754,7 @@
           <div style="font-size:11px;font-weight:700;color:#457b9d;margin-bottom:3px">Hanya File PDF</div>
           <div style="font-size:11px;color:#1c2b22;line-height:1.55">
             Upload dokumen addendum hanya menerima format <strong>PDF (.pdf)</strong>.<br>
-            <span style="color:#6b8f71">Ukuran maksimal: 10 MB.</span>
+            <span style="color:#6b8f71">Ukuran maksimal: 20 MB.</span>
           </div>
         </div>
       </div>
@@ -2024,11 +2024,11 @@ function previewUploadFiles() {
   preview.style.display = 'block';
   list.innerHTML = [...files].map(f => {
     const kb = (f.size/1024).toFixed(1);
-    const tooBig = f.size > 10*1024*1024;
+    const tooBig = f.size > 20*1024*1024;
     return `<div class="doc-item" style="${tooBig?'border:1px solid var(--red)':''}">
       <span>📕</span>
       <span class="doc-item-name">${f.name}</span>
-      <span class="doc-item-date" style="${tooBig?'color:var(--red)':''}">${kb} KB${tooBig?' ⚠️ >10MB':''}</span>
+      <span class="doc-item-date" style="${tooBig?'color:var(--red)':''}">${kb} KB${tooBig?' ⚠️ >20MB':''}</span>
     </div>`;
   }).join('');
 }
@@ -2064,9 +2064,9 @@ async function saveUpload() {
     errEl.style.display = 'block';
     return;
   }
-  const tooBig = [...files].filter(f => f.size > 10 * 1024 * 1024);
+  const tooBig = [...files].filter(f => f.size > 20 * 1024 * 1024);
   if (tooBig.length > 0) {
-    errEl.textContent = `❌ File melebihi 10 MB: ${tooBig.map(f => f.name).join(', ')}.`;
+    errEl.textContent = `❌ File melebihi 20 MB: ${tooBig.map(f => f.name).join(', ')}.`;
     errEl.style.display = 'block';
     return;
   }
@@ -2329,8 +2329,8 @@ async function saveAddendum() {
     errEl.style.display = 'block';
     return;
   }
-  if (file && file.size > 10 * 1024 * 1024) {
-    errEl.textContent = `❌ Ukuran file melebihi 10 MB.`;
+  if (file && file.size > 20 * 1024 * 1024) {
+    errEl.textContent = `❌ Ukuran file melebihi 20 MB.`;
     errEl.style.display = 'block';
     return;
   }
