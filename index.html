@@ -728,6 +728,50 @@
   </div>
 </div>
 
+<!-- ══════════ MODAL: TAMBAH ADDENDUM ══════════ -->
+<div class="modal-overlay hidden" id="modal-addendum">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">📑 Tambah Addendum</div>
+      <button class="modal-close" onclick="closeModal('modal-addendum')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="addendum-idx" value="">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px" id="addendum-mitra-label"></div>
+
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">Nomor Addendum</label>
+        <input type="text" class="form-input" id="addendum-nomor" placeholder="cth: 02/ADD/PKS-PHT/2026">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">Detail Perubahan</label>
+        <textarea class="form-input" id="addendum-detail" rows="4" placeholder="Jelaskan poin-poin perubahan yang tertera dalam addendum ini…" style="resize:vertical"></textarea>
+      </div>
+
+      <div style="background:#e8f1f8;border:1px solid #457b9d;border-radius:7px;padding:10px 13px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
+        <span style="font-size:18px;line-height:1">📋</span>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#457b9d;margin-bottom:3px">Hanya File PDF</div>
+          <div style="font-size:11px;color:#1c2b22;line-height:1.55">
+            Upload dokumen addendum hanya menerima format <strong>PDF (.pdf)</strong>.<br>
+            <span style="color:#6b8f71">Ukuran maksimal: 10 MB.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">File Addendum (PDF, opsional)</label>
+        <input type="file" id="addendum-file" class="form-input" accept=".pdf,application/pdf" style="padding:6px">
+        <div id="addendum-file-error" style="display:none;color:var(--red);font-size:11px;margin-top:4px;font-weight:600"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-addendum')">Batal</button>
+      <button class="btn-primary" onclick="saveAddendum()">📑 Simpan Addendum</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ==================== AUTH & SESSION ====================
 //
@@ -1356,6 +1400,8 @@ function renderDetail(d) {
 
   // Document sections per step
   const docsHtml = buildDocsHtml(d, idx);
+  // Addendum — hanya relevan untuk kategori yang sudah PKS/MoU Telah Ditandatangani
+  const addendumHtml = KATEGORI_SUDAH_TTD.includes(d.kategori) ? buildAddendumHtml(d, idx) : '';
 
   panel.innerHTML = `
     <div class="detail-header">
@@ -1395,6 +1441,8 @@ function renderDetail(d) {
       </div>
 
       ${docsHtml}
+
+      ${addendumHtml}
 
       <div class="monthly-header">
         <div class="monthly-title">Riwayat Progress Bulanan — ${currentYear}</div>
@@ -1479,6 +1527,54 @@ function buildDocsHtml(d, idx) {
       ${mitraFolderUrl ? `<a href="${mitraFolderUrl}" target="_blank" class="btn-drive-folder" title="Buka folder mitra di Google Drive">📁 Folder Drive</a>` : ''}
     </div>
     ${groupsHtml}
+  </div>`;
+}
+
+// Section "Addendum" — hanya ditampilkan untuk mitra kategori sudah TTD
+// (PKS/MoU Telah Ditandatangani). Dropdown "Ada/Tidak Ada" adalah field
+// terpisah (d.ada_addendum) yang dipilih manual oleh user; begitu "Ada"
+// dipilih, baru muncul tombol tambah + list addendum yang sudah tersimpan
+// (d.addendums — array, karena satu mitra bisa punya beberapa addendum
+// dari waktu ke waktu).
+function buildAddendumHtml(d, idx) {
+  const adaAddendum = d.ada_addendum || 'Tidak Ada';
+  const addendums = d.addendums || [];
+
+  const listHtml = addendums.length === 0
+    ? `<div class="no-docs" style="padding:6px 0">Belum ada addendum tersimpan</div>`
+    : addendums.map((a, ai) => {
+        const hasFile = !!(a.drive_url || a.base64);
+        return `<div class="doc-item ${a._uploading?'doc-uploading':''}">
+          <span class="doc-item-icon">📑</span>
+          <div class="doc-item-info">
+            <div class="doc-item-name" title="${a.nomor||''}">${a.nomor || '(Tanpa nomor)'}</div>
+            <div class="doc-item-meta">${a.detail || ''}${a._uploading ? ' · <span class="doc-upload-progress">⏳ mengupload...</span>' : ''}</div>
+          </div>
+          <div class="doc-item-actions">
+            ${hasFile ? `<button class="doc-btn doc-btn-view" onclick="viewAddendum(${idx},${ai})" title="Lihat PDF">👁 Lihat</button>` : ''}
+            ${hasFile ? `<button class="doc-btn doc-btn-download" onclick="downloadAddendum(${idx},${ai})" title="Download PDF">⬇ Download</button>` : ''}
+            <button class="doc-btn doc-btn-del" onclick="deleteAddendum(${idx},${ai})" title="Hapus addendum">✕</button>
+          </div>
+        </div>`;
+      }).join('');
+
+  return `<div class="doc-section">
+    <div class="doc-section-title">
+      <span>📑 Addendum
+        <span style="font-weight:400;font-size:10px;text-transform:none;color:var(--muted)">
+          ${addendums.length > 0 ? addendums.length + ' addendum tersimpan' : ''}
+        </span>
+      </span>
+    </div>
+    <div style="padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+      <label class="form-label" style="margin:0">Ada Addendum?</label>
+      <select class="form-select" style="width:auto;min-width:140px" onchange="onAdaAddendumChange(${idx}, this.value)">
+        <option value="Tidak Ada" ${adaAddendum==='Tidak Ada'?'selected':''}>Tidak Ada</option>
+        <option value="Ada" ${adaAddendum==='Ada'?'selected':''}>Ada</option>
+      </select>
+      ${adaAddendum === 'Ada' ? `<button class="btn-upload-doc" onclick="openAddendumModal(${idx})">＋ Tambah Addendum</button>` : ''}
+    </div>
+    ${adaAddendum === 'Ada' ? `<div class="doc-list" style="padding:8px 14px">${listHtml}</div>` : ''}
   </div>`;
 }
 
@@ -2190,6 +2286,171 @@ function deleteDoc(idx, step, di) {
   if (docId) autoSync('deleteDokumen', { id: docId });
 }
 
+// ==================== ADDENDUM ====================
+
+// Dipanggil saat dropdown "Ada Addendum?" diubah. Field ini disimpan
+// di level mitra (d.ada_addendum) lewat saveMitra biasa — independen
+// dari isi list d.addendums itu sendiri.
+function onAdaAddendumChange(idx, value) {
+  const d = DATA[idx];
+  d.ada_addendum = value;
+  if (!d.addendums) d.addendums = [];
+  renderDetail(d);
+  showToast(value === 'Ada' ? '📑 Addendum diaktifkan untuk mitra ini.' : '📑 Status addendum diubah jadi Tidak Ada.');
+  if (d.id) autoSync('saveMitra', { ...d });
+}
+
+function openAddendumModal(idx) {
+  document.getElementById('addendum-idx').value = idx;
+  document.getElementById('addendum-mitra-label').textContent = DATA[idx].mitra;
+  document.getElementById('addendum-nomor').value = '';
+  document.getElementById('addendum-detail').value = '';
+  document.getElementById('addendum-file').value = '';
+  document.getElementById('addendum-file-error').style.display = 'none';
+  openModal('modal-addendum');
+}
+
+async function saveAddendum() {
+  const idx = parseInt(document.getElementById('addendum-idx').value);
+  const nomor = document.getElementById('addendum-nomor').value.trim();
+  const detail = document.getElementById('addendum-detail').value.trim();
+  const fileInput = document.getElementById('addendum-file');
+  const file = fileInput.files[0];
+  const errEl = document.getElementById('addendum-file-error');
+  errEl.style.display = 'none'; errEl.textContent = '';
+
+  if (!nomor && !detail && !file) {
+    errEl.textContent = '⚠️ Isi minimal nomor addendum, detail, atau upload file.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (file && !(file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf')) {
+    errEl.textContent = `❌ File harus berformat PDF.`;
+    errEl.style.display = 'block';
+    return;
+  }
+  if (file && file.size > 10 * 1024 * 1024) {
+    errEl.textContent = `❌ Ukuran file melebihi 10 MB.`;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const d = DATA[idx];
+  if (!d.addendums) d.addendums = [];
+  const tempKey = 'add_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+  const addObj = { nomor, detail, _tempKey: tempKey, _uploading: !!file, base64: null, drive_url: null };
+  d.addendums.push(addObj);
+  closeModal('modal-addendum');
+  renderDetail(d); // tampilkan langsung, dengan status "mengupload..." jika ada file
+
+  if (file) {
+    try {
+      const base64 = await fileToBase64(file);
+      addObj.base64 = base64;
+      addObj._uploading = false;
+      addObj.nama_file = file.name;
+      addObj.ukuran_kb = Math.round(file.size / 1024);
+
+      if (isConnected && d.id) {
+        setSyncBadge('loading', '📑 Mengupload addendum ke Drive…');
+        try {
+          const res = await apiCall('uploadAddendum', { data: {
+            mitra_id: d.id,
+            mitra_nama: d.mitra,
+            nomor, detail,
+            nama_file: file.name,
+            ukuran_kb: addObj.ukuran_kb,
+            base64_content: base64,
+            _tempKey: tempKey
+          }});
+          if (res.success && res.data) {
+            if (res.data.drive_url)     addObj.drive_url     = res.data.drive_url;
+            if (res.data.drive_preview) addObj.drive_preview = res.data.drive_preview;
+            if (res.data.drive_file_id) addObj.drive_file_id = res.data.drive_file_id;
+            if (res.data.id)            addObj.id            = res.data.id;
+            delete addObj._tempKey;
+            setSyncBadge('ok', `✅ Tersimpan · ${DATA.length} mitra`);
+            showToast(`✅ Addendum "${nomor || file.name}" tersimpan.`);
+          } else {
+            const errMsg = res.error || 'Unknown error';
+            setSyncBadge('err', '⚠️ Upload addendum gagal');
+            showToast(`❌ Upload addendum gagal: ${errMsg}`);
+          }
+        } catch (uploadErr) {
+          setSyncBadge('err', '⚠️ Koneksi gagal — addendum disimpan lokal');
+        }
+      }
+    } catch (readErr) {
+      addObj._uploading = false;
+      addObj._error = true;
+      console.error('Gagal baca file addendum:', readErr);
+    }
+  } else {
+    // Tidak ada file — cukup catat nomor & detail addendum ke Sheet
+    showToast(`✅ Addendum "${nomor || '(tanpa nomor)'}" disimpan.`);
+    if (isConnected && d.id) {
+      autoSync('saveAddendum', {
+        mitra_id: d.id, mitra_nama: d.mitra, nomor, detail, _tempKey: tempKey
+      });
+    }
+  }
+  renderDetail(d);
+}
+
+function viewAddendum(idx, ai) {
+  const a = DATA[idx] && DATA[idx].addendums && DATA[idx].addendums[ai];
+  if (!a) return;
+  const name = a.nama_file || a.nomor || 'Addendum.pdf';
+
+  if (a.drive_preview) { openPdfModal(name, a.drive_preview, 'iframe', a.drive_url); return; }
+  if (a.drive_url) {
+    const previewUrl = a.drive_url.replace('/view?usp=sharing', '/preview').replace('/view', '/preview');
+    openPdfModal(name, previewUrl, 'iframe', a.drive_url);
+    return;
+  }
+  if (a.base64) { openPdfModal(name, 'data:application/pdf;base64,' + a.base64, 'object', null); return; }
+  showToast('⚠️ File belum tersedia untuk ditampilkan.');
+}
+
+function downloadAddendum(idx, ai) {
+  const a = DATA[idx] && DATA[idx].addendums && DATA[idx].addendums[ai];
+  if (!a) return;
+  const name = a.nama_file || (a.nomor ? a.nomor + '.pdf' : 'Addendum.pdf');
+
+  if (a.drive_file_id) {
+    window.open('https://drive.google.com/uc?export=download&id=' + a.drive_file_id, '_blank');
+    showToast('⬇ Mendownload dari Google Drive…');
+    return;
+  }
+  if (a.drive_url) {
+    const match = a.drive_url.match(/\/d\/([^/]+)\//);
+    if (match) {
+      window.open('https://drive.google.com/uc?export=download&id=' + match[1], '_blank');
+      showToast('⬇ Mendownload dari Google Drive…');
+      return;
+    }
+  }
+  if (a.base64) {
+    const el = document.createElement('a');
+    el.href = 'data:application/pdf;base64,' + a.base64;
+    el.download = name;
+    el.click();
+    showToast('⬇ Mendownload file lokal…');
+    return;
+  }
+  showToast('⚠️ File tidak tersedia untuk didownload.');
+}
+
+function deleteAddendum(idx, ai) {
+  const a = DATA[idx] && DATA[idx].addendums && DATA[idx].addendums[ai];
+  if (!confirm(`Hapus addendum "${a ? (a.nomor || '(tanpa nomor)') : ''}"?\nTindakan ini tidak dapat dibatalkan.`)) return;
+  const addendumId = a && a.id;
+  DATA[idx].addendums.splice(ai, 1);
+  renderDetail(DATA[idx]);
+  showToast('🗑 Addendum dihapus.');
+  if (addendumId) autoSync('deleteAddendum', { id: addendumId });
+}
+
 // ==================== MODAL UTILS ====================
 function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -2276,6 +2537,33 @@ async function _execSync(type, payload) {
     } else if (type === 'deleteDokumen') {
       if (!payload.id) return;
       res = await apiCall('deleteDokumen', { data: { id: payload.id } });
+    } else if (type === 'uploadAddendum') {
+      res = await apiCall('uploadAddendum', { data: payload });
+      if (res && res.success && res.data) {
+        const d = DATA.find(m => m.id === payload.mitra_id);
+        if (d && d.addendums) {
+          const a = d.addendums.find(x => x._tempKey === payload._tempKey);
+          if (a) {
+            if (res.data.id) a.id = res.data.id;
+            if (res.data.drive_url) a.drive_url = res.data.drive_url;
+            if (res.data.drive_file_id) a.drive_file_id = res.data.drive_file_id;
+            delete a._tempKey;
+          }
+        }
+      }
+    } else if (type === 'saveAddendum') {
+      // Addendum tanpa file (tetap dicatat di sheet, kolom drive_url kosong)
+      res = await apiCall('saveAddendum', { data: payload });
+      if (res && res.success && res.data && res.data.id) {
+        const d = DATA.find(m => m.id === payload.mitra_id);
+        if (d && d.addendums) {
+          const a = d.addendums.find(x => x._tempKey === payload._tempKey);
+          if (a) { a.id = res.data.id; delete a._tempKey; }
+        }
+      }
+    } else if (type === 'deleteAddendum') {
+      if (!payload.id) return;
+      res = await apiCall('deleteAddendum', { data: { id: payload.id } });
     }
 
     if (res && res.success) {
