@@ -1540,6 +1540,12 @@ function buildAddendumHtml(d, idx) {
   const adaAddendum = d.ada_addendum || 'Tidak Ada';
   const addendums = d.addendums || [];
 
+  // Cari mitra_folder_url (folder "Addendum") dari addendum manapun yang sudah punya
+  let addendumFolderUrl = '';
+  for (const a of addendums) {
+    if (a.mitra_folder_url) { addendumFolderUrl = a.mitra_folder_url; break; }
+  }
+
   const listHtml = addendums.length === 0
     ? `<div class="no-docs" style="padding:6px 0">Belum ada addendum tersimpan</div>`
     : addendums.map((a, ai) => {
@@ -1565,6 +1571,7 @@ function buildAddendumHtml(d, idx) {
           ${addendums.length > 0 ? addendums.length + ' addendum tersimpan' : ''}
         </span>
       </span>
+      ${addendumFolderUrl ? `<a href="${addendumFolderUrl}" target="_blank" class="btn-drive-folder" title="Buka folder Addendum di Google Drive">📁 Folder Drive</a>` : ''}
     </div>
     <div style="padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
       <label class="form-label" style="margin:0">Ada Addendum?</label>
@@ -2364,10 +2371,11 @@ async function saveAddendum() {
             _tempKey: tempKey
           }});
           if (res.success && res.data) {
-            if (res.data.drive_url)     addObj.drive_url     = res.data.drive_url;
-            if (res.data.drive_preview) addObj.drive_preview = res.data.drive_preview;
-            if (res.data.drive_file_id) addObj.drive_file_id = res.data.drive_file_id;
-            if (res.data.id)            addObj.id            = res.data.id;
+            if (res.data.drive_url)        addObj.drive_url        = res.data.drive_url;
+            if (res.data.drive_preview)    addObj.drive_preview    = res.data.drive_preview;
+            if (res.data.drive_file_id)    addObj.drive_file_id    = res.data.drive_file_id;
+            if (res.data.mitra_folder_url) addObj.mitra_folder_url = res.data.mitra_folder_url;
+            if (res.data.id)               addObj.id               = res.data.id;
             delete addObj._tempKey;
             setSyncBadge('ok', `✅ Tersimpan · ${DATA.length} mitra`);
             showToast(`✅ Addendum "${nomor || file.name}" tersimpan.`);
@@ -2610,7 +2618,7 @@ async function apiCall(action, data = {}, skipAuth = false) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','uploadDokumen','importData'].includes(action);
+  const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','uploadDokumen','saveAddendum','uploadAddendum','deleteAddendum','importData'].includes(action);
   let res;
   try {
     if (isWrite) {
