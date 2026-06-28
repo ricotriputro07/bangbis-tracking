@@ -2612,11 +2612,16 @@ async function apiCall(action, data = {}, skipAuth = false) {
     if (session && session.token) payload.token = session.token;
   }
 
-  // Timeout eksplisit (30 detik) — tanpa ini, koneksi yang menggantung tanpa
-  // pernah resolve/reject bisa membuat tombol UI (mis. tombol login) macet
+  // Timeout eksplisit — tanpa ini, koneksi yang menggantung tanpa pernah
+  // resolve/reject bisa membuat tombol UI (mis. tombol login) macet
   // selamanya di state "loading" karena await tidak pernah selesai.
+  // Upload file (terutama yang besar, dikirim sebagai base64) butuh waktu
+  // jauh lebih lama di server untuk decode + simpan ke Drive, jadi diberi
+  // timeout lebih panjang dibanding action ringan seperti login/saveMitra.
+  const UPLOAD_ACTIONS = ['uploadDokumen', 'uploadAddendum'];
+  const timeoutMs = UPLOAD_ACTIONS.includes(action) ? 120000 : 30000;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   const isWrite = ['saveMitra','deleteMitra','saveMonthly','saveDokumen','deleteDokumen','uploadDokumen','saveAddendum','uploadAddendum','deleteAddendum','importData'].includes(action);
   let res;
@@ -2636,7 +2641,8 @@ async function apiCall(action, data = {}, skipAuth = false) {
     }
   } catch (err) {
     if (err.name === 'AbortError') {
-      throw new Error('Koneksi ke server timeout (30 detik). Periksa jaringan Anda.');
+      const seconds = Math.round(timeoutMs / 1000);
+      throw new Error(`Koneksi ke server timeout (${seconds} detik). Periksa jaringan Anda, atau coba file yang lebih kecil.`);
     }
     throw err;
   } finally {
