@@ -1036,28 +1036,12 @@ shakeStyle.textContent = `@keyframes shake {
 }`;
 document.head.appendChild(shakeStyle);
 
-// ==================== DATA ====================
-// DATA dimuat sepenuhnya dari Google Sheets lewat loadFromSheets() saat
-// aplikasi dibuka (lihat initApp() di akhir file). Array ini SENGAJA
-// dikosongkan — tidak ada lagi data contoh/hardcode tertulis di kode.
 let DATA = [];
 
 // STEPS_ALL berisi SEMUA kemungkinan tahap, termasuk ketiga jenis tahap
-// persetujuan (Direksi/Dewas/Menteri) secara terpisah. Untuk satu mitra,
-// hanya SUBSET dari daftar ini yang relevan — ditentukan oleh kombinasi
-// "Jenis Kerja Sama" (titik mulai) dan "Kewenangan Persetujuan" (sampai
-// mana jenjang persetujuan yang dilewati). Lihat getStepsForJenis() di bawah.
 const STEPS_ALL = ["Permohonan","Pernyataan Minat","Penyusunan KAK","Pengambilan KAK","Aanwijzing","Pem. Dok. Penawaran","Evadok","Penetapan Calon Mitra","Penyusunan FS","Rekomendasi","Persetujuan Direksi","Persetujuan Dewas","Persetujuan Menteri","Terbit SKK","Terbit PKS"];
 
 // ==================== FLOW TAHAPAN PER SKEMA PERMOHONAN ====================
-// Dropdown "Jenis Kerja Sama" menampilkan 6 varian penulisan apa adanya
-// (mengikuti nilai yang sudah ada di Google Sheets), TAPI logika flow/
-// progress mengelompokkan varian yang maknanya sama ke titik mulai yang
-// sama — jadi "PKS Baru" dan "PKS Baru Dalam Proses" diperlakukan identik
-// secara progress, meski tetap dua opsi terpisah di dropdown.
-//   - PKS Baru Dalam Proses, PKS Baru             → mulai dari "Pernyataan Minat"
-//   - Perpanjangan PKS Dalam Proses, Perpanjangan PKS → mulai dari "Penyusunan FS"
-//   - MoU Baru, NDA Baru                          → mulai dari "Rekomendasi"
 const JENIS_KS_START_STEP = {
   'PKS Baru Dalam Proses':         'Pernyataan Minat',
   'PKS Baru':                      'Pernyataan Minat',
@@ -1068,11 +1052,6 @@ const JENIS_KS_START_STEP = {
 };
 
 // ==================== JENJANG PERSETUJUAN ====================
-// "Kewenangan Persetujuan" menentukan sampai mana jenjang yang dilalui
-// SETELAH tahap "Rekomendasi", sebelum lanjut ke "Terbit SKK"/"Terbit PKS":
-//   - Direksi → ...Rekomendasi → Persetujuan Direksi → Terbit SKK → Terbit PKS
-//   - Dewas   → ...Rekomendasi → Persetujuan Direksi → Persetujuan Dewas → Terbit SKK → Terbit PKS
-//   - Menteri → ...Rekomendasi → Persetujuan Direksi → Persetujuan Dewas → Persetujuan Menteri → Terbit SKK → Terbit PKS
 const KEWENANGAN_STEPS = {
   'Direksi': ['Persetujuan Direksi'],
   'Dewas':   ['Persetujuan Direksi', 'Persetujuan Dewas'],
@@ -1080,12 +1059,6 @@ const KEWENANGAN_STEPS = {
 };
 const ALL_APPROVAL_STEPS = ['Persetujuan Direksi', 'Persetujuan Dewas', 'Persetujuan Menteri'];
 
-// Mengembalikan urutan tahap final yang relevan untuk suatu mitra, hasil
-// kombinasi titik mulai (dari jenis_ks) dan jenjang persetujuan (dari
-// kewenangan). Tahap-tahap persetujuan yang tidak relevan (di atas jenjang
-// yang dipilih) DIHILANGKAN dari urutan — bukan sekadar diabaikan — supaya
-// checklist & progress benar-benar mencerminkan jenjang yang berlaku.
-//
 // Fallback aman untuk data lama: jenis_ks tidak dikenali → mulai dari awal
 // (STEPS_ALL sebelum tahap persetujuan); kewenangan tidak dikenali/kosong →
 // default ke jenjang "Menteri" (jenjang paling lengkap) agar tidak ada
@@ -2294,10 +2267,6 @@ function deleteDoc(idx, step, di) {
 }
 
 // ==================== ADDENDUM ====================
-
-// Dipanggil saat dropdown "Ada Addendum?" diubah. Field ini disimpan
-// di level mitra (d.ada_addendum) lewat saveMitra biasa — independen
-// dari isi list d.addendums itu sendiri.
 function onAdaAddendumChange(idx, value) {
   const d = DATA[idx];
   d.ada_addendum = value;
